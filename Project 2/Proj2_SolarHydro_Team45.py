@@ -22,3 +22,14 @@ energy_in
 system_efficiency
 fill_time
 empty_time
+
+#other variables
+
+
+
+#functions needed
+def energyTurbine(energy_out,turbine_efficiency):
+    return energy_out * (1 / turbine_efficiency - 1)
+
+def pipeFrictionDown(water_mass, pipe_friction_factor, pipe_length, velocity_down, pipe_diameter):
+    return water_mass * (pipe_friction_factor * pipe_length * velocity_down ** 2)
