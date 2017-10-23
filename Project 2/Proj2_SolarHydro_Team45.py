@@ -39,4 +39,5 @@ def pipeFrictionDown(water_mass, pipe_friction_factor, pipe_length, velocity_dow
 def energyLossHitting(water_mass, velocity_down):
     return water_mass * pow(velocity_down, 2) / 2
 
-
+def massWater(water_density, flow_rate_pump, fill_time, pipe_length, pipe_diameter):
+    return water_density * pi * pow()
