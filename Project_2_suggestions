@@ -1,0 +1,109 @@
+from math import pow, pi
+
+
+
+#given
+
+energy_out = 120
+
+gravity = 9.81
+
+water_density = 1000
+
+
+
+# #inputs
+
+# pump_efficiency = input("Enter your pump efficiency:")
+
+# turbine_efficiency = input("Enter your turbine efficiency:")
+
+# pipe_diameter = input("Enter your pipe diameter:")
+
+# pipe_length = input("Enter your pipe length:")
+
+# pipe_friction_factor = input("Enter your pipe's friction coefficient:")
+
+# reservoir_depth = input("Enter the reservoir's depth:")
+
+# bottom_reservoir_elevation = input("Enter the bottom reservoir's elevation:")
+
+# flow_rate_pump_up = input("Enter the flow rate going up the pump:")
+
+# flow_rate_pump_down = input("Enter the flow rate going down the pump:")
+
+# flow_rate_turbine = input("Enter the flow rate of the turbine:")
+
+# bend_coefficient_1 = input("Enter bent coefficient #1:")
+
+# bend_coefficient_2 = input("Enter bend coefficient #2:")
+
+# fluid_velocity = input("Enter fluid velocity:")
+
+
+
+#intermediate variables
+
+
+
+# #outputs
+
+# reservoir_surface_area
+
+# energy_in
+
+# system_efficiency
+
+# fill_time
+
+# empty_time
+
+
+
+#functions needed
+
+
+
+
+def pipeFrictionDown(water_mass, pipe_friction_factor, pipe_length, velocity_down, pipe_diameter):
+
+    return water_mass * (pipe_friction_factor * pipe_length * pow(velocity_down, 2) / (2 * pipe_diameter))
+
+
+
+def energyLossHitting(water_mass, velocity_down):
+
+    return water_mass * pow(velocity_down, 2) / 2
+
+
+#filling the Reservoir
+def massWater(water_density, flow_rate_pump, fill_time, pipe_length, pipe_diameter):
+
+    return water_density * pi * pow((pipe_diameter/2), 2)* pipe_length
+    
+
+def energyPipeFrictionUp(pipe_friction_factor, massWater, pipe_length, flow_rate_pump, pipe_diameter)
+  
+    return (massWater*pipe_friction_factor*pipe_length*pow(flow_rate_pump_up,2))/(2*pipe_diameter)
+    
+def energyPipeFrictionDown:
+
+    return(massWater*pipe_friction_factor* pipe_length*pow(flow_rate_pump_up,2))/(2*pipe_diameter)
+    
+def energyPumpLoss(pump_efficiency, energy_in):
+    return (1-pump_efficiency)/energy_in
+
+def energyTurbineLoss(energy_out, turbine_efficiency):    
+    return energy_out*(1/(turbine_efficiency-1))
+    
+def volumetricFlow(pipe_diameter, fluid_velocity )
+    return pow((pipe_diameter/2),2)*pi*fluid_velocity
+  
+  
+  
+  
+  
+  
+  
+  
+  
