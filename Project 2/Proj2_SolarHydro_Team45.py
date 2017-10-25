@@ -9,12 +9,12 @@ water_density = 1000
 # pump_efficiency
 # turbine_efficiency
 # pipe_diameter
-# pipe_length
-# pipe_friction_factor =
-# reservoir_depth
-# bottom_reservoir_elevation = input("Enter the bottom reservoir's elevation:")
-# flow_rate_pump = input("Enter the flow rate of the pump:")
-# flow_rate_turbine = input("Enter the flow rate of the turbine:")
+pipe_length = 50
+# pipe_friction_factor
+reservoir_depth = 10
+bottom_reservoir_elevation = 20
+# flow_rate_pump =
+# flow_rate_turbine =
 # bend_coefficient_1 = input("Enter bent coefficient #1:")
 # bend_coefficient_2 = input("Enter bend coefficient #2:")
 
@@ -28,14 +28,21 @@ water_density = 1000
 # empty_time
 
 #functions needed
+
+def fill_time():
+    return volume / volumetric_flow_rate_up
+
+def empty_time():
+    return volume / volumetric_flow_rate_down
+
 def velocityUp():
     pass
 
 def velocityDown():
     pass
 
-def effectiveElevation():
-    pass
+def effectiveElevation(height, depth):
+    return height + bottom_reservoir_elevation
 
 def mwhToJoules(energy):
     return energy * 3600000
@@ -55,17 +62,23 @@ def energyPumpLoss(pipe_efficiency,energy_in):
 def energyTurbineLoss(turbine_efficiency):
     return energy_out * (1 / turbine_efficiency - 1)
 
-def energyPipeFrictionUp(water_mass, pipe_friction_factor, pipe_length, velocity_up, pipe_diameter):
+def energyPipeFrictionUp(water_mass, pipe_friction_factor, velocity_up, pipe_diameter):
     return water_mass * (pipe_friction_factor * pipe_length * pow(velocity_up, 2) / (2 * pipe_diameter))
 
-def energyPipeFrictionDown(water_mass, pipe_friction_factor, pipe_length, velocity_down, pipe_diameter):
+def energyPipeFrictionDown(water_mass, pipe_friction_factor, velocity_down, pipe_diameter):
     return water_mass * (pipe_friction_factor * pipe_length * pow(velocity_down, 2) / (2 * pipe_diameter))
 
 def energyFittingLoss(water_mass, fitting_constant, velocity_down):
     return water_mass * fitting_constant * pow(velocity_down, 2) / 2
 
+def energyOut(pump,turbine,pipe_up,pipe_down,fitting,energy_in):
+    return energy_in - pump - turbine - pipe_up - pipe_down - fitting
+
 def massWater(water_density, volumetric_flow_rate, fill_time):
     return water_density * volumetric_flow_rate * fill_time
+
+def fill_time(volume, volumetric_flow_rate):
+    return volume / volumetric_flow_rate
 
 def volumetricFlowRate(pipe_area, velocity):
     return pipe_area * velocity
