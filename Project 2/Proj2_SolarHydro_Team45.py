@@ -195,8 +195,8 @@ internal_diameters = [x/4.0 for x in range(0,13)]
 internal_diameters[0] = 0.1
 
 def systemEfficiency(np,nt,h,f,lu,ld,eee,d):
-    num = np*(2*nt*gravity*h-f*pow(ld,3)*pow(pi,2)*pow(d,3)/16-pow(pi,2)*eee*pow(d,4)*pow(ld,2)/16)
-    den = 2*gravity*h-pow(pi,2)*f*pow(d,3)*pow(lu,3)/16-pow(pi,2)*eee*pow(d,4)*pow(lu,2)/16
+    num = np*((2*nt*gravity*h)-(f*pow(ld,3)*pow(pi,2)*pow(d,3)/16)-(pow(pi,2)*eee*pow(d,4)*pow(ld,2)/16))
+    den = (2*gravity*h)-((pow(pi,2)/16)*f*pow(d,3)*(pow(lu,3))-((pow(pi,2)/16)*eee*pow(d,4)*pow(lu,2))
     return 120*num/den
 
 max = 0
