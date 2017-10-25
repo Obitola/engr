@@ -6,12 +6,12 @@ gravity = 9.81
 water_density = 1000
 
 # #inputs
-# pump_efficiency = input("Enter your pump efficiency:")
-# turbine_efficiency = input("Enter your turbine efficiency:")
-# pipe_diameter = input("Enter your pipe diameter:")
-# pipe_length = input("Enter your pipe length:")
-# pipe_friction_factor = input("Enter your pipe's friction coefficient:")
-# reservoir_depth = input("Enter the reservoir's depth:")
+# pump_efficiency
+# turbine_efficiency
+# pipe_diameter
+# pipe_length
+# pipe_friction_factor =
+# reservoir_depth
 # bottom_reservoir_elevation = input("Enter the bottom reservoir's elevation:")
 # flow_rate_pump = input("Enter the flow rate of the pump:")
 # flow_rate_turbine = input("Enter the flow rate of the turbine:")
@@ -28,17 +28,47 @@ water_density = 1000
 # empty_time
 
 #functions needed
-def energyTurbine(energy_out,turbine_efficiency):
+def velocityUp():
+    pass
+
+def velocityDown():
+    pass
+
+def effectiveElevation():
+    pass
+
+def energyOutJoules():
+    pass
+
+def energyInJoules():
+    pass
+
+def energyIn():
+    pass
+
+def pipeArea(diameter):
+    return pi * pow(diameter, 2) / 4
+
+def energyPumpLoss(pipe_efficiency,energy_in):
+    return (1 - pipe_efficiency) * energy_in
+
+def energyTurbineLoss(turbine_efficiency):
     return energy_out * (1 / turbine_efficiency - 1)
 
-def pipeFrictionDown(water_mass, pipe_friction_factor, pipe_length, velocity_down, pipe_diameter):
+def energyPipeFrictionUp(water_mass, pipe_friction_factor, pipe_length, velocity_up, pipe_diameter):
+    return water_mass * (pipe_friction_factor * pipe_length * pow(velocity_up, 2) / (2 * pipe_diameter))
+
+def energyPipeFrictionDown(water_mass, pipe_friction_factor, pipe_length, velocity_down, pipe_diameter):
     return water_mass * (pipe_friction_factor * pipe_length * pow(velocity_down, 2) / (2 * pipe_diameter))
 
-def energyLossHitting(water_mass, velocity_down):
-    return water_mass * pow(velocity_down, 2) / 2
+def energyFittingLoss(water_mass, fitting_constant, velocity_down):
+    return water_mass * fitting_constant * pow(velocity_down, 2) / 2
 
-def massWater(water_density, flow_rate_pump, fill_time, pipe_length, pipe_diameter):
-    return water_density * pi * pow()
+def massWater(water_density, volumetric_flow_rate, fill_time):
+    return water_density * volumetric_flow_rate * fill_time
+
+def volumetricFlowRate(pipe_area, velocity):
+    return pipe_area * velocity
 
 #returns $ per m3 / sec of flow
 def pumpFoundry(product_line, meters):
@@ -109,28 +139,38 @@ def turbinesW(product_line, meters):
     efficiency = [[360, 432, 518, 622, 746], [396, 475, 570, 684, 821], [436, 523, 627, 753, 903], [479, 575, 690, 828, 994],[527, 632, 759, 911, 1093], [580, 696, 835, 1002, 1202], [638, 765, 918, 1102, 1322], [702, 842, 1010, 1212, 1455],[772, 926, 1111, 1333, 1600], [849, 1019, 1222, 1467, 1760], [934, 1120, 1345, 1614, 1936]]
     return (efficiency[x][y])
 
-pumps = ['cheap','value','standard','high-grade','premium']
-pipes = ['salvage','questionable','better','nice','premium','glorious']
+#pumps = ['cheap','value','standard','high-grade','premium']
+pumps = [0.8,0.83,0.86,0.89,0.92]
+#pipes = ['salvage','questionable','better','nice','premium','glorious']
+pipes = [0.05,0.03,0.02,0.01,0.005,0.002]
 bends = [20,30,45,60,75,90]
-turbines = ['meh','good','fine','super','mondo']
+#turbines = ['meh','good','fine','super','mondo']
+turbines = [0.83,0.86,0.89,0.92,0.94]
 
 effective_performance_ratings = [x for x in range(20, 130, 10)]
 internal_diameters = [x/4.0 for x in range(0,13)]
 internal_diameters[0] = 0.1
 
-for pump in pumps:
-    for pipe in pipes:
-        for bend in bends:
-            for turbine in turbines:
-                for m in effective_performance_ratings:
-                    for d in internal_diameters:
-                        print(pumpFoundry(pump,m))
-                        print(pipeShack(pipe,d))
-                        print(bendFittings(bend,d))
-                        print(turbinesW(turbine,m))
-                        print(pump)
-                        print(pipe)
-                        print(bend)
-                        print(turbine)
-                        print(m)
-                        print(d)
+def systemEfficiency(np,nt,h,f,lu,ld,eee,d):
+    num = np(2*nt*gravity*h-f*pow(ld,3)*pow(pi,2)*pow(d,3)/16-pow(pi,2)*eee*pow(d,4)*pow(ld,2)/16)
+    den = 2*gravity*h-pow(pi,2)*f*pow(d,3)*pow(lu,3)/16-pow(pi,2)*eee*pow(d,4)*pow(lu,2)/16
+    return num/den
+
+print(systemEfficiency(0.9,))
+
+# for pump in pumps:
+#     for pipe in pipes:
+#         for bend in bends:
+#             for turbine in turbines:
+#                 for m in effective_performance_ratings:
+#                     for d in internal_diameters:
+#                         print(pumpFoundry(pump,m))
+#                         print(pipeShack(pipe,d))
+#                         print(bendFittings(bend,d))
+#                         print(turbinesW(turbine,m))
+#                         print(pump)
+#                         print(pipe)
+#                         print(bend)
+#                         print(turbine)
+#                         print(m)
+#                         print(d)
