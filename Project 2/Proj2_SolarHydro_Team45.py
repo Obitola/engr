@@ -1,23 +1,20 @@
-from math import pow, pi
+from math import pow, pi, ceil
 
+#converts between Joules and MWH
 def mwhToJoules(energy):
     return energy * 3600000000
 
+#converts between Joules and MWH
 def joulesToMwh(energy):
     return energy / 3600000000
 
-
 #functions needed
-def reservoirSurfaceArea():
-    return 2
-
 def energyIn():
     return (energy_out + turbineLoss() + pipeFrictionUp() + pipeFrictionDown() + fittingLoss())/pump_efficiency
 
+
 def systemEfficiency():
     return energy_out / energyIn()
-
-
 
 def fillTime():
     if flow_rate_pump <= flow_rate_turbine:
@@ -39,7 +36,7 @@ def velocityDown():
     return flow_rate_turbine / pipeArea()
 
 def effectiveElevation():
-    return reservoir_depth / 2 + bottom_reservoir_elevation
+    return reservoirDepth() / 2 + bottomReservoirElevation()
 
 def pipeArea():
     return pi * pow(pipe_diameter, 2) / 4
@@ -51,17 +48,21 @@ def turbineLoss():
     return energy_out * (1 / turbine_efficiency - 1)
 
 def pipeFrictionUp():
-    return waterMass() * (pipe_friction_factor * pipe_length * pow(velocityUp(), 2) / (2 * pipe_diameter))
+    return waterMass() * (pipe_friction_factor * pipeLength() * pow(velocityUp(), 2) / (2 * pipe_diameter))
 
 def pipeFrictionDown():
-    return waterMass() * (pipe_friction_factor * pipe_length * pow(velocityDown(), 2) / (2 * pipe_diameter))
+    return waterMass() * (pipe_friction_factor * pipeLength() * pow(velocityDown(), 2) / (2 * pipe_diameter))
 
 def fittingLoss():
     sum = 0
-    sum += waterMass() * bend_coefficient_1 * (pow(velocityUp(), 2) + pow(velocityDown(),2))
-    sum += waterMass() * bend_coefficient_2 * (pow(velocityUp(), 2) + pow(velocityDown(), 2))
-    sum += waterMass() * bend_coefficient_3 * (pow(velocityUp(), 2) + pow(velocityDown(), 2))
+    sum += waterMass() * bendCoefficient1() * (pow(velocityUp(), 2) + pow(velocityDown(),2))
+    sum += waterMass() * bendCoefficient2() * (pow(velocityUp(), 2) + pow(velocityDown(), 2))
+    sum += waterMass() * bendCoefficient3() * (pow(velocityUp(), 2) + pow(velocityDown(), 2))
+    sum += waterMass() * bendCoefficient4() * (pow(velocityUp(), 2) + pow(velocityDown(), 2))
     return sum / 2
+
+def volume():
+    return waterMass() / water_density
 
 def waterMass():
     if flow_rate_pump <= flow_rate_turbine:
@@ -69,21 +70,67 @@ def waterMass():
     else:
         return 12 * 60 * 60 * flow_rate_turbine * water_density
 
+def surfaceArea():
+    return reservoir_surface_area
 
+def reservoirDepth():
+    return volume() / surfaceArea()
 
+def pumpCost():
+    return flow_rate_pump * pumpFoundry()
+
+def pipeCost():
+    return pipeShack() * pipe_length
+
+def turbineCost():
+    return turbinesW() * flow_rate_turbine
+
+def pumpHouseCost():
+    pass
+
+def roadCost():
+    pass
+
+def sitePrepCost():
+    return 0.25 * surfaceArea()
+
+def perimeterWallCost():
+    pass
+
+def pipeInstallCost():
+    pass
+
+def raisedPipeCost():
+    pass
+
+def otherCosts():
+    pass
+
+def cost():
+    sum = 0
+    sum += pumpCost()
+    sum += pipeCost()
+    sum += turbineCost()
+    sum += pumpHouseCost()
+    sum += roadCost()
+    sum += sitePrepCost()
+    sum += perimeterWallCost()
+    sum += pipeInstallCost()
+    sum += raisedPipeCost()
+    return sum
 
 #returns $ per m3 / sec of flow
-def pumpFoundry(product_line, meters):
-    x = int(( meters / 10 ) - 2)
-    if product_line == 'cheap' or product_line == 0.80:
+def pumpFoundry():
+    x = ceil(int(( effectiveElevation() / 10 ) - 2))
+    if pump_efficiency == 'cheap' or pump_efficiency == 0.80:
         y = 0
-    elif product_line == 'value' or product_line == 0.83:
+    elif pump_efficiency == 'value' or pump_efficiency == 0.83:
         y = 1
-    elif product_line == 'standard' or product_line == 0.86:
+    elif pump_efficiency == 'standard' or pump_efficiency == 0.86:
         y = 2
-    elif product_line == 'high-grade' or product_line == 0.89:
+    elif pump_efficiency == 'high-grade' or pump_efficiency == 0.89:
         y = 3
-    elif product_line == 'premium' or product_line == 0.92:
+    elif pump_efficiency == 'premium' or pump_efficiency == 0.92:
         y = 4
     efficiency = [[200,240,288,346,415]]
     efficiency.append([220,264,317,380,456])
@@ -99,19 +146,19 @@ def pumpFoundry(product_line, meters):
     return efficiency[x][y]
 
 #returns $ / m
-def pipeShack(product_line, diameter):
-    x = int(round(diameter * 4))
-    if product_line == 'salvage' or product_line == 0.05:
+def pipeShack():
+    x = int(round(pipe_diameter * 4))
+    if pipe_friction_factor == 'salvage' or pipe_friction_factor == 0.05:
         y = 0
-    elif product_line == 'questionable' or product_line == 0.03:
+    elif pipe_friction_factor == 'questionable' or pipe_friction_factor == 0.03:
         y = 1
-    elif product_line == 'better' or product_line == 0.02:
+    elif pipe_friction_factor == 'better' or pipe_friction_factor == 0.02:
         y = 2
-    elif product_line == 'nice' or product_line == 0.01:
+    elif pipe_friction_factor == 'nice' or pipe_friction_factor == 0.01:
         y = 3
-    elif product_line == 'premium' or product_line == 0.005:
+    elif pipe_friction_factor == 'premium' or pipe_friction_factor == 0.005:
         y = 4
-    elif product_line == 'glorious' or product_line == 0.002:
+    elif pipe_friction_factor == 'glorious' or pipe_friction_factor == 0.002:
         y = 5
     efficiency = [[1.00,1.20,1.44,2.16,2.70,2.97]]
     efficiency.append([1.20,1.44,1.72,2.58,3.23,3.55])
@@ -129,19 +176,109 @@ def pipeShack(product_line, diameter):
     return(efficiency[x][y])
 
 #returns $ / bend
-def bendFittings(angle, diameter):
-    x = int(round(diameter * 4))
-    if angle == 20 or angle == 0.1:
+def bendFittings1():
+    x = int(round(pipe_diameter * 4))
+    if bendCoefficient1() == 20 or bendCoefficient1() == 0.1:
         y = 0
-    elif angle == 30 or angle == 0.15:
+    elif bendCoefficient1() == 30 or bendCoefficient1() == 0.15:
         y = 1
-    elif angle == 45 or angle == 0.2:
+    elif bendCoefficient1() == 45 or bendCoefficient1() == 0.2:
         y = 2
-    elif angle == 60 or angle == 0.22:
+    elif bendCoefficient1() == 60 or bendCoefficient1() == 0.22:
         y = 3
-    elif angle == 75 or angle == 0.27:
+    elif bendCoefficient1() == 75 or bendCoefficient1() == 0.27:
         y = 4
-    elif angle == 90 or angle == 0.3:
+    elif bendCoefficient1() == 90 or bendCoefficient1() == 0.3:
+        y = 5
+    efficiency = [[1.00,1.05,1.10,1.16,1.22,1.28,0.10]]
+    efficiency.append([1.49,1.57,1.64,1.73,1.81,1.90,0.25])
+    efficiency.append([4.93,5.17,5.43,5.70,5.99,7,0.50])
+    efficiency.append([14,15,16,16,17,18,0.75])
+    efficiency.append([32,34,36,38,39,41,1.00])
+    efficiency.append([62,65,69,72,76,80,1.25])
+    efficiency.append([107,112,118,124,130,137,1.50])
+    efficiency.append([169,178,187,196,206,216,1.75])
+    efficiency.append([252,265,278,292,307,322,2.00])
+    efficiency.append([359,377,396,415,436,458,2.25])
+    efficiency.append([492,516,542,569,598,628,2.50])
+    efficiency.append([654,687,721,757,795,835,2.75])
+    efficiency.append([849,892,936,983,1032,1084,3.00])
+    return(efficiency[x][y])
+
+#returns $ / bend
+def bendFittings2():
+    x = int(round(pipe_diameter * 4))
+    if bendCoefficient2() == 20 or bendCoefficient2() == 0.1:
+        y = 0
+    elif bendCoefficient2() == 30 or bendCoefficient2() == 0.15:
+        y = 1
+    elif bendCoefficient2() == 45 or bendCoefficient2() == 0.2:
+        y = 2
+    elif bendCoefficient2() == 60 or bendCoefficient2() == 0.22:
+        y = 3
+    elif bendCoefficient2() == 75 or bendCoefficient2() == 0.27:
+        y = 4
+    elif bendCoefficient2() == 90 or bendCoefficient2() == 0.3:
+        y = 5
+    efficiency = [[1.00,1.05,1.10,1.16,1.22,1.28,0.10]]
+    efficiency.append([1.49,1.57,1.64,1.73,1.81,1.90,0.25])
+    efficiency.append([4.93,5.17,5.43,5.70,5.99,7,0.50])
+    efficiency.append([14,15,16,16,17,18,0.75])
+    efficiency.append([32,34,36,38,39,41,1.00])
+    efficiency.append([62,65,69,72,76,80,1.25])
+    efficiency.append([107,112,118,124,130,137,1.50])
+    efficiency.append([169,178,187,196,206,216,1.75])
+    efficiency.append([252,265,278,292,307,322,2.00])
+    efficiency.append([359,377,396,415,436,458,2.25])
+    efficiency.append([492,516,542,569,598,628,2.50])
+    efficiency.append([654,687,721,757,795,835,2.75])
+    efficiency.append([849,892,936,983,1032,1084,3.00])
+    return(efficiency[x][y])
+
+#returns $ / bend
+def bendFittings3():
+    x = int(round(pipe_diameter * 4))
+    if bendCoefficient3() == 20 or bendCoefficient3() == 0.1:
+        y = 0
+    elif bendCoefficient3() == 30 or bendCoefficient3() == 0.15:
+        y = 1
+    elif bendCoefficient3() == 45 or bendCoefficient3() == 0.2:
+        y = 2
+    elif bendCoefficient3() == 60 or bendCoefficient3() == 0.22:
+        y = 3
+    elif bendCoefficient3() == 75 or bendCoefficient3() == 0.27:
+        y = 4
+    elif bendCoefficient3() == 90 or bendCoefficient3() == 0.3:
+        y = 5
+    efficiency = [[1.00,1.05,1.10,1.16,1.22,1.28,0.10]]
+    efficiency.append([1.49,1.57,1.64,1.73,1.81,1.90,0.25])
+    efficiency.append([4.93,5.17,5.43,5.70,5.99,7,0.50])
+    efficiency.append([14,15,16,16,17,18,0.75])
+    efficiency.append([32,34,36,38,39,41,1.00])
+    efficiency.append([62,65,69,72,76,80,1.25])
+    efficiency.append([107,112,118,124,130,137,1.50])
+    efficiency.append([169,178,187,196,206,216,1.75])
+    efficiency.append([252,265,278,292,307,322,2.00])
+    efficiency.append([359,377,396,415,436,458,2.25])
+    efficiency.append([492,516,542,569,598,628,2.50])
+    efficiency.append([654,687,721,757,795,835,2.75])
+    efficiency.append([849,892,936,983,1032,1084,3.00])
+    return(efficiency[x][y])
+
+#returns $ / bend
+def bendFittings4():
+    x = int(round(pipe_diameter * 4))
+    if bendCoefficient4() == 20 or bendCoefficient4() == 0.1:
+        y = 0
+    elif bendCoefficient4() == 30 or bendCoefficient4() == 0.15:
+        y = 1
+    elif bendCoefficient4() == 45 or bendCoefficient4() == 0.2:
+        y = 2
+    elif bendCoefficient4() == 60 or bendCoefficient4() == 0.22:
+        y = 3
+    elif bendCoefficient4() == 75 or bendCoefficient4() == 0.27:
+        y = 4
+    elif bendCoefficient4() == 90 or bendCoefficient4() == 0.3:
         y = 5
     efficiency = [[1.00,1.05,1.10,1.16,1.22,1.28,0.10]]
     efficiency.append([1.49,1.57,1.64,1.73,1.81,1.90,0.25])
@@ -159,17 +296,17 @@ def bendFittings(angle, diameter):
     return(efficiency[x][y])
 
 #returns $ per m^3 / sec of flow
-def turbinesW(product_line, meters):
-    x = int((meters / 10) - 2)
-    if product_line == 'meh' or product_line == 0.83:
+def turbinesW():
+    x = ceil(int((effectiveElevation() / 10) - 2))
+    if turbine_efficiency == 'meh' or turbine_efficiency == 0.83:
         y = 0
-    elif product_line == 'good' or product_line == 0.86:
+    elif turbine_efficiency == 'good' or turbine_efficiency == 0.86:
         y = 1
-    elif product_line == 'fine' or product_line == 0.89:
+    elif turbine_efficiency == 'fine' or turbine_efficiency == 0.89:
         y = 2
-    elif product_line == 'super' or product_line == 0.92:
+    elif turbine_efficiency == 'super' or turbine_efficiency == 0.92:
         y = 3
-    elif product_line == 'mondo' or product_line == 0.94:
+    elif turbine_efficiency == 'mondo' or turbine_efficiency == 0.94:
         y = 4
     efficiency = [[360, 432, 518, 622, 746]]
     efficiency.append([396, 475, 570, 684, 821])
@@ -196,7 +333,6 @@ effective_performance_ratings = [x for x in range(20, 130, 10)]
 internal_diameters = [x/4.0 for x in range(0,13)]
 internal_diameters[0] = 0.1
 
-
 #given
 energy_out = mwhToJoules(120)
 gravity = 9.81
@@ -208,48 +344,57 @@ turbine_efficiency = 0.92
 pipe_friction_factor = 0.05
 
 #model inputs
-bottom_reservoir_elevation = 50
-pipe_length = 75
-bend_coefficient_1 = 0
-bend_coefficient_2 = 0
+zones = [1,2,3]
+def bottomReservoirElevation():
+    if zone == 1:
+        return 50
+
+def pipeLength():
+    if zone == 1:
+        return 75
+
+def bendCoefficient1():
+    if zone == 1:
+        return 0
+
+def bendCoefficient2():
+    if zone == 1:
+        return 0
+
+def bendCoefficient3():
+    if zone == 1:
+        return 0
+
+def bendCoefficient4():
+    if zone == 1:
+        return 0
 
 #we choose
-pipe_diameter = 2
-reservoir_depth = 10
+#range()
 flow_rate_pump = 65
+#range()
 flow_rate_turbine = 30
 
-
-volume_reservoir = waterMass() / water_density
+#one or the other
+#range()
+#reservoir_depth = 10
+#range(<600**2)
+reservoir_surface_area = pow(600,2)
 
 # #outputs
-# reservoir_surface_area
-# energy_in
-# system_efficiency
-# fill_time
-# empty_time
-
-pipe_diameter = 2
-pipe_length = 75
-#model
-reservoir_depth = 10
-#model
-bottom_reservoir_elevation = 30
-#we choose
-flow_rate_pump = 9
-#we choose
-flow_rate_turbine = 9
-
-bend_coefficient_1 = 0
-bend_coefficient_2 = 0
-bend_coefficient_3 = 0
-
-print(energy_out/energyIn())
+# reservoir_surface_area  surfaceArea()
+# energy_in               energyIn()
+# system_efficiency       systemEfficiency()
+# fill_time               fillTime()
+# empty_time              emptyTime()
 
 for pump_efficiency in pumps:
     for pipe_friction_factor in pipes:
         for turbine_efficiency in turbines:
-            for pipe_length in effective_performance_ratings:
                 for pipe_diameter in internal_diameters:
-                    print(joulesToMwh(energyIn()))
-                    print(energy_out/energyIn())
+                    for zone in zones:
+                        if effectiveElevation() <= 120:
+                            print('Energy In:',joulesToMwh(energyIn()))
+                            print('Efficiency:',systemEfficiency())
+                        else:
+                            print("error:", effectiveElevation())
