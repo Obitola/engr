@@ -11,54 +11,65 @@ def joulesToMwh(energy):
 def reservoirSurfaceArea():
     return 2
 
-def energyIn(turbine_loss, pipe_friction_up, pipe_friction_down, fitting_loss):
-    return (energy_out + turbine_loss + pipe_friction_up + pipe_friction_down + fitting_loss)/pump_efficiency
+def energyIn():
+    return (energy_out + turbineLoss() + pipeFrictionUp() + pipeFrictionDown() + fittingLoss())/pump_efficiency
 
-def systemEfficiency(energy_in):
-    return energy_out / energy_in
+def systemEfficiency():
+    return energy_out / energyIn()
+
+
 
 def fillTime():
-    return volume_reservoir / flow_rate_pump
+    if flow_rate_pump <= flow_rate_turbine:
+        return 12
+    else:
+        return 12 * flow_rate_turbine / flow_rate_pump
 
 def emptyTime():
-    return volume_reservoir / flow_rate_turbine
+    if flow_rate_turbine <= flow_rate_pump:
+        return 12
+    else:
+        return 12 * flow_rate_pump / flow_rate_turbine
 
-def velocityUp(pipe_area):
-    return flow_rate_pump / pipe_area
+def velocityUp():
+    return flow_rate_pump / pipeArea()
 
-def velocityDown(pipe_area):
-    return flow_rate_turbine / pipe_area
 
-def effectiveElevation(depth):
-    return depth / 2 + bottom_reservoir_elevation
+def velocityDown():
+    return flow_rate_turbine / pipeArea()
 
-def pipeArea(diameter):
-    return pi * pow(diameter, 2) / 4
+def effectiveElevation():
+    return reservoir_depth / 2 + bottom_reservoir_elevation
 
-def pumpLoss(pipe_efficiency,energy_in):
-    return (1 - pipe_efficiency) * energy_in
+def pipeArea():
+    return pi * pow(pipe_diameter, 2) / 4
 
-def turbineLoss(turbine_efficiency):
+def pumpLoss():
+    return (1 - pump_efficiency) * energyIn()
+
+def turbineLoss():
     return energy_out * (1 / turbine_efficiency - 1)
 
-def pipeFrictionUp(water_mass, velocity_up, pipe_diameter):
-    return water_mass * (pipe_friction_factor * pipe_length * pow(velocity_up, 2) / (2 * pipe_diameter))
+def pipeFrictionUp():
+    return waterMass() * (pipe_friction_factor * pipe_length * pow(velocityUp(), 2) / (2 * pipe_diameter))
 
-def pipeFrictionDown(water_mass, velocity_down, pipe_diameter):
-    return water_mass * (pipe_friction_factor * pipe_length * pow(velocity_down, 2) / (2 * pipe_diameter))
+def pipeFrictionDown():
+    return waterMass() * (pipe_friction_factor * pipe_length * pow(velocityDown(), 2) / (2 * pipe_diameter))
 
-def fittingLoss(water_mass, velocity_up, velocity_down):
+def fittingLoss():
     sum = 0
-    sum += water_mass * bend_coefficient_1 * (pow(velocity_up, 2) + pow(velocity_down,2))
-    sum += water_mass * bend_coefficient_2 * (pow(velocity_up, 2) + pow(velocity_down, 2))
-    sum += water_mass * bend_coefficient_3 * (pow(velocity_up, 2) + pow(velocity_down, 2))
+    sum += waterMass() * bend_coefficient_1 * (pow(velocityUp(), 2) + pow(velocityDown(),2))
+    sum += waterMass() * bend_coefficient_2 * (pow(velocityUp(), 2) + pow(velocityDown(), 2))
+    sum += waterMass() * bend_coefficient_3 * (pow(velocityUp(), 2) + pow(velocityDown(), 2))
     return sum / 2
 
-def waterMass(volume):
-    return volume * water_density
+def waterMass():
+    if flow_rate_pump <= flow_rate_turbine:
+        return 12 * 60 * 60 * flow_rate_pump * water_density
+    else:
+        return 12 * 60 * 60 * flow_rate_turbine * water_density
 
-def fillTime(volume, volumetric_flow_rate):
-    return volume / volumetric_flow_rate
+
 
 
 #returns $ per m3 / sec of flow
@@ -191,19 +202,25 @@ energy_out = mwhToJoules(120)
 gravity = 9.81
 water_density = 1000
 
-# #inputs
+#shop inputs
 pump_efficiency = 0.9
 turbine_efficiency = 0.92
-pipe_diameter = 2
-pipe_length = 75
 pipe_friction_factor = 0.05
-reservoir_depth = 10
+
+#model inputs
 bottom_reservoir_elevation = 50
+pipe_length = 75
+bend_coefficient_1 = 0
+bend_coefficient_2 = 0
+
+#we choose
+pipe_diameter = 2
+reservoir_depth = 10
 flow_rate_pump = 65
 flow_rate_turbine = 30
-bend_coefficient_1 = 0.15
-bend_coefficient_2 = 0.2
-volume_reservoir = 1070000000 / water_density
+
+
+volume_reservoir = waterMass() / water_density
 
 # #outputs
 # reservoir_surface_area
@@ -217,63 +234,22 @@ pipe_length = 75
 #model
 reservoir_depth = 10
 #model
-bottom_reservoir_elevation = 50
+bottom_reservoir_elevation = 30
 #we choose
-flow_rate_pump = 65
+flow_rate_pump = 9
 #we choose
-flow_rate_turbine = 30
+flow_rate_turbine = 9
 
-bend_coefficient_1 = 0.15
-bend_coefficient_2 = 0.2
+bend_coefficient_1 = 0
+bend_coefficient_2 = 0
 bend_coefficient_3 = 0
 
-#volume_reservoir
-velocity_up = velocityUp(pipeArea(pipe_diameter))
-velocity_down = velocityDown(pipeArea(pipe_diameter))
-water_mass = waterMass(volume_reservoir)
+print(energy_out/energyIn())
 
-turbine_loss = turbineLoss(turbine_efficiency)
-pipe_friction_up = pipeFrictionUp(water_mass,velocity_up,pipe_diameter)
-pipe_friction_down = pipeFrictionDown(water_mass,velocity_down,pipe_diameter)
-#need to resole fitting_loss
-fitting_loss = fittingLoss(water_mass,velocity_up,velocity_down)
-energy_in = energyIn(turbine_loss,pipe_friction_up,pipe_friction_down,fitting_loss)
-print(joulesToMwh(energy_in))
-print(energy_out/energy_in)
-
-
-
-# for pump_efficiency in pumps:
-#     for pipe_friction_factor in pipes:
-#         for bend_coefficient_1 in bends:
-#             for x in range(1):
-#                 for turbine_efficiency in turbines:
-#                     for m in effective_performance_ratings:
-#                         for d in internal_diameters:
-#                             pipe_diameter = d
-#                             pipe_length = m
-#                             #model
-#                             reservoir_depth = 10
-#                             #model
-#                             bottom_reservoir_elevation = 20
-#                             #we choose
-#                             flow_rate_pump = 2
-#                             #we choose
-#                             flow_rate_turbine = 2
-#
-#                             bend_coefficient_1 = 20
-#
-#                             volume_reservoir
-#                             velocity_up = velocityUp(pipeArea(pipe_diameter))
-#                             velocity_down = velocityDown(pipeArea(pipe_diameter))
-#                             water_mass = waterMass(volume_reservoir)
-#
-#                             turbine_loss = turbineLoss(turbine_efficiency)
-#                             pipe_friction_up = pipeFrictionUp(water_mass,pipe_friction_factor,velocity_up,pipe_diameter)
-#                             pipe_friction_down = pipeFrictionDown(water_mass,pipe_friction_factor,velocity_down,pipe_diameter)
-#                             #need to resole fitting_loss
-#                             fitting_loss = fittingLoss(water_mass,bend_coefficient_1,velocity_up)
-#                             energy_in = energyIn(turbine_loss,pipe_friction_up,pipe_friction_down,fitting_loss)
-#                             print(joulesToMwh(energy_in))
-#                             print(energy_out/energy_in)
-#                             print
+for pump_efficiency in pumps:
+    for pipe_friction_factor in pipes:
+        for turbine_efficiency in turbines:
+            for pipe_length in effective_performance_ratings:
+                for pipe_diameter in internal_diameters:
+                    print(joulesToMwh(energyIn()))
+                    print(energy_out/energyIn())
