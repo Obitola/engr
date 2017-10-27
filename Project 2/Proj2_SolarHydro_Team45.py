@@ -70,12 +70,49 @@ def waterMass():
     else:
         return 12 * 60 * 60 * flow_rate_turbine * water_density
 
-def surfaceArea():
-    return reservoir_surface_area
+zone = 1
 
-def reservoirDepth():
-    return volume() / surfaceArea()
+def costZone():
+	if zone == 1
+  		sitePrepCost = (.25 * surfaceArea()) + 40000 + 8000
+      	bendCoefficient1 = .15
+        bendCoefficient2 = .15
+		bendCoefficient3 = 0
+    elif zone == 2
+    	sitePrepCost  = (.5 * surfaceArea()) + 100000 + 2000
+      	bendCoefficient1 = .22
+		bendCoefficient2 = .22
+		bendCoefficient3 = 
+    elif zone == 3
+    	sitePrepCost = (.3*surfaceArea())+(.6*surfaceArea()) +150000
+     	bendCoefficient1 = .2
+		bendCoefficient2 = .2
+		bendCoefficient3 = .2
+    else 
+    	print("Error: Zone input invalid")
+pumpHouseCost = 100000
+wallHeight = reservoirDepth()
+perimeter = 2*pi*sqrt(surfaceArea()/pi)
+def wallHeightCost():
+	if wallHeight < 7.5 and wallHeight >= 5 
+  		wallHeightCost = 30 + (wallHeight - 5)*(60-30)/(2.5)
+  	elif wallHeight < 10 and wallHeight >= 7.5
+    	wallHeightCost  60 + (wallHeight-7.5)*(95-60)/2.5
+    elif wallHeight < 12.5 and wallHeight >= 10
+    	wallHeightCost = 95 +(wallHeight - 10)*(135-95)/2.5
+    elif wallHeight < 15 and wallHeight >= 12.5
+    	wallHeightCost = 135 + (wallHeight - 12.5)*(180-135)/2.5
+    elif wallHeight < 17.5 and wallHeight >= 15
+    	wallHeightCost = 180 + (wallHeight - 15)*(250-180)/2.5
+    elif wallHeight < 20 and wallHeight >= 17.5
+    	wallHeightCost = 250 + (wallHeight - 17.5)*(340-250)/2.5
+    elif wallHeight == 20
+    	wallHeightCost = 340
+    else
+    	print('Wall Height must be [5,20] meters')
+    return wallHeightCost
 
+  
 def pumpCost():
     return flow_rate_pump * pumpFoundry()
 
@@ -86,25 +123,34 @@ def turbineCost():
     return turbinesW() * flow_rate_turbine
 
 def pumpHouseCost():
-    pass
+    return pumphouseCost
 
-def roadCost():
-    pass
+def bendCost()
+	return bendFittings1()+bendFittings2()+bendFittings3()
 
 def sitePrepCost():
-    return 0.25 * surfaceArea()
+    return sitePrepCost
 
 def perimeterWallCost():
-    pass
+    return perimeter * wallHeightCost()
 
 def pipeInstallCost():
-    pass
+    return 500 * pipe_length
 
 def raisedPipeCost():
-    pass
-
+    if zone == 1
+    	raisedPipe = 0
+      	raisedPipeArea = 0
+    elif zone == 2
+    	raisedPipe = 0
+     	 raisedPipeArea = 0
+    else 
+    	raisedPipeLength = 0
+      	raisedPipeArea = 0
+    return 50 *raisedPipeLength + 250 * raisedPipeArea
+    
 def otherCosts():
-    pass
+    return 0
 
 def cost():
     sum = 0
@@ -112,11 +158,11 @@ def cost():
     sum += pipeCost()
     sum += turbineCost()
     sum += pumpHouseCost()
-    sum += roadCost()
     sum += sitePrepCost()
     sum += perimeterWallCost()
     sum += pipeInstallCost()
     sum += raisedPipeCost()
+    sum += otherCosts()
     return sum
 
 #returns $ per m3 / sec of flow
