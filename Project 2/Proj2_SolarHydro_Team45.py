@@ -82,12 +82,12 @@ def costZone():
     	sitePrepCost  = (.5 * surfaceArea()) + 100000 + 2000
       	bendCoefficient1 = .22
 		bendCoefficient2 = .22
-		bendCoefficient3 = 
+		bendCoefficient3 = 0
     elif zone == 3
     	sitePrepCost = (.3*surfaceArea())+(.6*surfaceArea()) +150000
-     	bendCoefficient1 = .2
-		bendCoefficient2 = .2
-		bendCoefficient3 = .2
+     	bendCoefficient1 = .1
+		bendCoefficient2 = .15
+		bendCoefficient3 = .22
     else 
     	print("Error: Zone input invalid")
 pumpHouseCost = 100000
@@ -399,21 +399,7 @@ def pipeLength():
     if zone == 1:
         return 75
 
-def bendCoefficient1():
-    if zone == 1:
-        return 0
 
-def bendCoefficient2():
-    if zone == 1:
-        return 0
-
-def bendCoefficient3():
-    if zone == 1:
-        return 0
-
-def bendCoefficient4():
-    if zone == 1:
-        return 0
 
 #we choose
 #range()
