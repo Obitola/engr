@@ -65,7 +65,7 @@ def volume():
     return waterMass() / water_density
 
 def waterMass():
-    if flow_rate_pump <= flow_rate_turbine:
+    if flow_rate_pump>= flow_rate_turbine:
         return 12 * 60 * 60 * flow_rate_pump * water_density
     else:
         return 12 * 60 * 60 * flow_rate_turbine * water_density
