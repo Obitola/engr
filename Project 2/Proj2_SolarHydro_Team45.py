@@ -99,6 +99,7 @@ def surfaceArea():
 def reservoirDepth():
     return reservoir_depth
 
+#equations for wall costs
 def wallHeightCost():
     if reservoirDepth() < 7.5 and reservoirDepth() >= 5:
         return 30 + (reservoirDepth() - 5) * (60 - 30) / (2.5)
@@ -117,30 +118,23 @@ def wallHeightCost():
     else:
         print('Wall Height must be [5,20] meters')
 
-
 def perimeter():
     return 2 * pi * sqrt(surfaceArea() / pi)
-
 
 def pumpCost():
     return flowRatePump() * pumpFoundry()
 
-
 def pipeCost():
     return pipeShack() * pipeLength()
-
 
 def turbineCost():
     return turbinesW() * flowRateTurbine()
 
-
 def pumpHouseCost():
     return 100000
 
-
 def bendCost():
     return bendFittings1() + bendFittings2() + bendFittings3() + bendFittings4()
-
 
 def roadCost():
     if zone == 1:
@@ -161,14 +155,11 @@ def sitePrepCost():
     else:
         print("Error: Zone input invalid")
 
-
 def perimeterWallCost():
     return perimeter() * wallHeightCost()
 
-
 def pipeInstallCost():
     return 500 * pipeLength()
-
 
 def raisedPipeCost():
     if zone == 3:
@@ -176,10 +167,8 @@ def raisedPipeCost():
     else:
         return 0
 
-
 def otherCosts():
     return 10000
-
 
 def cost():
     sum = 0
@@ -194,7 +183,6 @@ def cost():
     sum += pipeInstallCost()
     sum += raisedPipeCost()
     return sum
-
 
 # returns $ per m3 / sec of flow
 def pumpFoundry():
@@ -225,7 +213,6 @@ def pumpFoundry():
         return efficiency[int(x)][y]
     else:
         return efficiency[int(x)][y] * (1 - (x % 1)) + efficiency[int(x + 1)][y] * (x % 1)
-
 
 # returns $ / m
 def pipeShack():
@@ -263,7 +250,6 @@ def pipeShack():
         return efficiency[int(x)][y]
     else:
         return efficiency[int(x)][y] * (1 - (x % 1)) + efficiency[int(x + 1)][y] * (x % 1)
-
 
 # returns $ / bend
 def bendFittings1():
@@ -304,7 +290,6 @@ def bendFittings1():
         else:
             return efficiency[int(x)][y] * (1 - (x % 1)) + efficiency[int(x + 1)][y] * (x % 1)
 
-
 # returns $ / bend
 def bendFittings2():
     if not bendCoefficient2():
@@ -344,7 +329,6 @@ def bendFittings2():
         else:
             return efficiency[int(x)][y] * (1 - (x % 1)) + efficiency[int(x + 1)][y] * (x % 1)
 
-
 # returns $ / bend
 def bendFittings3():
     if not bendCoefficient3():
@@ -383,7 +367,6 @@ def bendFittings3():
             return efficiency[int(x)][y]
         else:
             return efficiency[int(x)][y] * (1 - (x % 1)) + efficiency[int(x + 1)][y] * (x % 1)
-
 
 # returns $ / bend
 def bendFittings4():
@@ -455,7 +438,6 @@ def turbinesW():
     else:
         return efficiency[int(x)][y] * (1 - (x % 1)) + efficiency[int(x + 1)][y] * (x % 1)
 
-
 def works():
     if (
                             gravity * effectiveElevation() - pipeFrictionDown() - fittingLossDown() > 0 and fillTime() < 12 and emptyTime() < 12):
@@ -477,7 +459,6 @@ def works():
         return True
     else:
         return False
-
 
 # pumps = ['cheap','value','standard','high-grade','premium']
 pumps = [0.8, 0.83, 0.86, 0.89, 0.92]
@@ -504,7 +485,6 @@ pipe_friction_factor = 0.05
 # model inputs
 zones = [1, 2, 3]
 
-
 def bottomReservoirElevation():
     if zone == 1:
         return 50
@@ -512,7 +492,6 @@ def bottomReservoirElevation():
         return 100
     elif zone == 3:
         return 65
-
 
 def pipeLength():
     if go:
@@ -524,7 +503,6 @@ def pipeLength():
     elif zone == 3:
         return 118.12
 
-
 def bendCoefficient1():
     if go:
         return 0.15
@@ -534,7 +512,6 @@ def bendCoefficient1():
         return 0.22
     elif zone == 3:
         return 0.1
-
 
 def bendCoefficient2():
     if go:
@@ -546,7 +523,6 @@ def bendCoefficient2():
     elif zone == 3:
         return 0.15
 
-
 def bendCoefficient3():
     if go:
         return 0
@@ -556,7 +532,6 @@ def bendCoefficient3():
         return 0.2
     elif zone == 3:
         return 0.22
-
 
 def bendCoefficient4():
     if go:
@@ -568,17 +543,14 @@ def bendCoefficient4():
     elif zone == 3:
         return 0
 
-
 # we choose
 # range(1,500)
 def flowRatePump():
     return flow_rate_pump
 
-
 # range(1,500) >= pump
 def flowRateTurbine():
     return flow_rate_turbine
-
 
 # one or the other
 # range()
@@ -606,7 +578,7 @@ def flowRateTurbine():
 # Flow Rate Pump 5
 # Flow Rate Turbine 5
 
-min_cost = 100000000
+min_rating = 100000000
 max_efficiency = 0
 
 # go = input('Would you like to test a value? [1-yes/0-no]')
@@ -620,8 +592,8 @@ if go:
     pipe_friction_factor = 0.05
     reservoir_depth = 10
     # bottomReservoirElevation() zone based
-    # bendCoefficient1() =
-    # bendCoefficient2() =
+    # bendCoefficient1() defined in funciton
+    # bendCoefficient2() defined in function
     turbine_efficiency = 0.92
     flow_rate_turbine = 30
     zone = 1
@@ -647,13 +619,13 @@ if not go:
         for pipe_friction_factor in pipes:
             for turbine_efficiency in turbines:
                 for pipe_diameter in internal_diameters:
-                    for zone in range(3,4):
-                        for flow_rate_turbine in range(8, 17):
+                    for zone in range(1,2):
+                        for flow_rate_turbine in range(8, 25):
                             flow_rate_pump = flow_rate_turbine
                             for reservoir_depth in range(5, 20, 1):
                                 if works():
-                                    if cost() * (1 - systemEfficiency()) < min_cost:
-                                        min_cost = cost() * (1 - systemEfficiency())
+                                    if cost() * (1 - systemEfficiency()) < min_rating:
+                                        min_rating = cost() * (1 - systemEfficiency())
                                         # if systemEfficiency() > max_efficiency:
                                         #     max_efficiency = systemEfficiency()
                                         print('Energy In:', joulesToMwh(energyIn()))
