@@ -1,6 +1,6 @@
-# Activity X.X.X: An introduction to Python.
-# File: filename.py
-# Date: 1 September 2014
+# Project 2
+# File: Proj2_SolarHydro_Team45.py
+# Date: 29 October 2017
 # By: Oluwatobi Ola
 # olao
 # Evelyn Nonamaker
@@ -159,11 +159,14 @@ def perimeterWallCost():
     return perimeter() * wallHeightCost()
 
 def pipeInstallCost():
-    return 500 * pipeLength()
+    if zone == 1 or zone == 2:
+        return 500 * pipeLength()
+    else:
+        return 0
 
 def raisedPipeCost():
     if zone == 3:
-        return 50 * 118.12 + 250 * 1506.5
+        return 500 * 118.12 + 250 * 1506.5
     else:
         return 0
 
@@ -477,10 +480,6 @@ energy_out = mwhToJoules(120)
 gravity = 9.81
 water_density = 1000
 
-# shop inputs
-pump_efficiency = 0.9
-turbine_efficiency = 0.92
-pipe_friction_factor = 0.05
 
 # model inputs
 zones = [1, 2, 3]
@@ -552,12 +551,6 @@ def flowRatePump():
 def flowRateTurbine():
     return flow_rate_turbine
 
-# one or the other
-# range()
-# reservoir_depth = 10
-# range(<600**2)
-
-# reservoir_depth_range = range(100, int(pi * 300 ** 2), 10000)
 
 # #outputs
 # reservoir_surface_area  surfaceArea()
@@ -566,23 +559,12 @@ def flowRateTurbine():
 # fill_time               fillTime()
 # empty_time              emptyTime()
 
-# Best results
-# Energy In: 138.78161758426884
-# Efficiency: 0.8646678291318766
-# Cost: $ 304353.23
-# Pump efficiency: 0.92
-# Pipe Friction Factor: 0.002
-# Turbine Efficiency: 0.94
-# Pipe Diameter: 3.0
-# Surface Area: 11100
-# Flow Rate Pump 5
-# Flow Rate Turbine 5
 
 min_rating = 100000000
 max_efficiency = 0
 
-# go = input('Would you like to test a value? [1-yes/0-no]')
-go = 0
+print('Would you like to validate the model or find the best design?')
+go = int(input('Enter 1 to validate the model or enter 0 to find the best design:'))
 
 if go:
     pump_efficiency = 0.9
@@ -600,7 +582,6 @@ if go:
 
     print('Energy In:', joulesToMwh(energyIn()))
     print('Efficiency:', systemEfficiency())
-    print('Cost: $', round(cost(), 2))
     print('Reservoir Depth:', reservoir_depth)
     print('Pump efficiency:', pump_efficiency)
     print('Pipe Friction Factor:', pipe_friction_factor)
@@ -614,7 +595,7 @@ if go:
     print('Volume:', volume())
     print('Zone:', zone)
 
-if not go:
+if not int(go):
     for pump_efficiency in pumps:
         for pipe_friction_factor in pipes:
             for turbine_efficiency in turbines:
@@ -643,3 +624,4 @@ if not go:
                                         print('Empty Time:', emptyTime())
                                         print('Volume:', volume())
                                         print('Zone:', zone)
+                                        print('Rating:',min_rating)
