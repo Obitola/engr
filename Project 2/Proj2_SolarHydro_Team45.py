@@ -442,8 +442,7 @@ def turbinesW():
         return efficiency[int(x)][y] * (1 - (x % 1)) + efficiency[int(x + 1)][y] * (x % 1)
 
 def works():
-    if (
-                            gravity * effectiveElevation() - pipeFrictionDown() - fittingLossDown() > 0 and fillTime() < 12 and emptyTime() < 12):
+    if (gravity * effectiveElevation() - pipeFrictionDown() - fittingLossDown() > 0 and fillTime() < 12 and emptyTime() < 12):
         if zone == 1:
             if surfaceArea() < pi * 300 ** 2:
                 return True
@@ -607,8 +606,8 @@ if not int(go):
                                 if works():
                                     if cost() * (1 - systemEfficiency()) < min_rating:
                                         min_rating = cost() * (1 - systemEfficiency())
-                                        # if systemEfficiency() > max_efficiency:
-                                        #     max_efficiency = systemEfficiency()
+                                    #if systemEfficiency() > max_efficiency:
+                                    #   max_efficiency = systemEfficiency()
                                         print('Energy In:', joulesToMwh(energyIn()))
                                         print('Efficiency:', systemEfficiency())
                                         print('Cost: $', round(cost(), 2))
