@@ -59,50 +59,46 @@ def getMotor(motor):
     except IOError as error:
         print(error)
 
-class PID(object):
-    """A generic PID loop controller which can be inherited and used in other control algorithms"""
+def data():
+    print("Sensor: %6d Motor A: %6d  B: %6d  C: %6d  D: %6d" \
+          % (grovepi.ultrasonicRead(ultrasonic_sensor_port), \
+             BP.get_motor_encoder(BP.PORT_A), \
+             BP.get_motor_encoder(BP.PORT_B), \
+             BP.get_motor_encoder(BP.PORT_C), \
+             BP.get_motor_encoder(BP.PORT_D)))
 
-    def __init__(self, startingError):
-        """Return a instance of a un tuned PID controller"""
-        self._p = 1
-        self._i = 0
-        self._d = 0
-        self._esum = 0 #Error sum for integral term
-        self._le =startingError    #Last error value
+def stop():
+    BP.offset_motor_encoder(BP.PORT_A, BP.get_motor_encoder(BP.PORT_A))
+    BP.offset_motor_encoder(BP.PORT_B, BP.get_motor_encoder(BP.PORT_B))
+    BP.offset_motor_encoder(BP.PORT_C, BP.get_motor_encoder(BP.PORT_C))
+    BP.offset_motor_encoder(BP.PORT_D, BP.get_motor_encoder(BP.PORT_D))
 
-    def calculate(self, error, dt):
-        """Calculates the output of the PID controller"""
-        self._esum += error*dt
-        dError = (error - self._le)/dt
-        u = self._p*error + self._i*self._esum + self._d *dError
-        self._le = error
-        return u
+    BP.reset_all()
+
+a = 'a'
+b = 'b'
+c = 'c'
+d = 'd'
 
 
-    def reset(self, startingError):
-        """Resets the integral sum and the last error value"""
-        self._esum = 0
-        self._le = startingError
-    @property
-    def p(self):
-        return self._p
+try:
+    while True:
+        do = input('What to do:')
+        if do == 'right':
+            setMotor(a, 0)
+            setMotor(d, 30)
+        elif do == 'left':
+            setMotor(a, 30)
+            setMotor(d, 0)
+        elif do == 'straight':
+            setMotor(a,30)
+            setMotor(d,30)
+        elif do == 'stop':
+            setMotor(a,0)
+            setMotor(d,0)
 
-    @p.setter
-    def p(self, value):
-        self._p = value
 
-    @property
-    def i(self):
-        return self._i
+except KeyboardInterrupt:
+    pass
 
-    @i.setter
-    def i(self, value):
-        self._i = value
-
-    @property
-    def d(self):
-        return self._d
-
-    @d.setter
-    def d(self, value):
-        self._d = value
+stop()
