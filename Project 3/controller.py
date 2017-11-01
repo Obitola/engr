@@ -108,8 +108,8 @@ def userControl():
         elif go == 'l':
             left()
         elif go == 'm':
-            setMotor(1, 20)
-            setMotor(4, 20)
+            setMotor(1, 80)
+            setMotor(4, 80)
         elif go == 's':
             setMotor(1, 0)
             setMotor(4, 0)
@@ -165,12 +165,12 @@ def moveSpeed(cmps):
     pd = (getMotor(1) + getMotor(4))/2
     pt = time.time()
     #convert cm to angle
-    circumference = 20
+    circumference = 24
     goal = cmps * 360 / circumference
     speed = 0
     power = 0
     adder = 0
-    max_power = 40
+    max_power = 90
     while True:
         d = (getMotor(1) + getMotor(4)) / 2
         t = time.time()
@@ -182,6 +182,8 @@ def moveSpeed(cmps):
             power = max_power
         elif power < 0:
             power = 0
+        setMotor(1,power)
+        setMotor(4,power)
         pd = d
         pt = t
 
@@ -190,7 +192,7 @@ def moveDistance(cm):
     pd = (getMotor(1) + getMotor(4))/2
     pt = time.time()
     #convert cm to angle
-    circumference = 20
+    circumference = 24
     goal = pd + cm * 360 / circumference
     speed = 0
     power = 0
@@ -236,6 +238,8 @@ try:
             ramp()
         elif do == 'ctrl':
             userControl()
+        elif do == 'speed':
+            moveSpeed(5)
 
 
 except KeyboardInterrupt:
