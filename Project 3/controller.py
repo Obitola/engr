@@ -7,8 +7,7 @@ import grovepi
 
 
 BP = brickpi3.BrickPi3()  # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
-BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.TOUCH)  # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
-BP.set_sensor_type(BP.PORT_2, BP.SENSOR_TYPE.LIGHT)  # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
+BP.set_sensor_type(BP.PORT_2, BP.SENSOR_TYPE.TOUCH)  # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
 ultrasonic_sensor_port = 4
 
 # gets the distance value of the sensor
@@ -21,7 +20,7 @@ def getDistance():
 # checks if button is pressed
 def getTouch():
     try:
-        return BP.get_sensor(BP.PORT_1)
+        return BP.get_sensor(BP.PORT_2)
     except brickpi3.SensorError:
         print('Error: Touch Sensor')
 
@@ -78,14 +77,14 @@ d = 'd'
 def left():
     setMotor(a, -30)
     setMotor(d, 30)
-    time.sleep(1.10)
+    time.sleep(0.8)
     setMotor(a, 0)
     setMotor(d, 0)
 
 def right():
     setMotor(a, 30)
     setMotor(d, -30)
-    time.sleep(1.10)
+    time.sleep(0.8)
     setMotor(a, 0)
     setMotor(d, 0)
 
@@ -103,6 +102,7 @@ def stop():
 def userControl():
     go = input('How to move:')
     while True:
+        go = input('How to move:')
         if go == 'r':
             right()
         elif go == 'l':
@@ -126,9 +126,9 @@ def avoidObstacle():
     while True:
         if state == 'moving':
             moveDistance(5)
-            time(0.1)
+            time.sleep(0.1)
             if getDistance() < 15:
-                state == 'state1'
+                state = 'state1'
         elif state == 'state1':
             left()
             moveDistance(10)
@@ -164,7 +164,7 @@ def moveSpeed(cmps):
     pd = (getMotor(1) + getMotor(4))/2
     pt = time.time()
     #convert cm to angle
-    circumference = 8
+    circumference = 20
     goal = cmps * 360 / circumference
     speed = 0
     power = 0
@@ -189,24 +189,29 @@ def moveDistance(cm):
     pd = (getMotor(1) + getMotor(4))/2
     pt = time.time()
     #convert cm to angle
-    circumference = 8
+    circumference = 20
     goal = pd + cm * 360 / circumference
     speed = 0
     power = 0
     adder = 0
     max_power = 40
+    count = 0
     while True:
         d = (getMotor(1) + getMotor(4)) / 2
         t = time.time()
         speed = (d - pd)/(t - pt)/(360 * circumference)
 
-        adder = (goal - d) / 1000 - speed
+        adder = (goal - d) / 10 - speed/10
+        print(adder)
         power += adder
         if power > max_power:
             power = max_power
         elif power < 0:
             power = 0
-        if abs(speed) < 10 and abs(d - pd) < 10:
+        setMotor(1,power)
+        setMotor(4,power)
+        count += 1
+        if abs(speed) == 0 and abs(d - pd) == 0 and count > 200:
             setMotor(1,0)
             setMotor(4,0)
             break
@@ -228,7 +233,8 @@ try:
             avoidObstacle()
         elif do == 'ramp':
             ramp()
-
+        elif do == 'ctrl':
+            userControl()
 
 
 except KeyboardInterrupt:
