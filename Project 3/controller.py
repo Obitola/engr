@@ -123,6 +123,7 @@ def userControl():
 def avoidObstacle():
     state = 'moving'
     x = 0
+    time.sleep(5)
     while True:
         if state == 'moving':
             moveDistance(5)
