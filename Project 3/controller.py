@@ -69,6 +69,9 @@ def stop():
 
     BP.reset_all()
 
+def cm(circumference):
+    return (getMotor(1)+getMotor(4))/2 *circumference / 360
+
 a = 'a'
 b = 'b'
 c = 'c'
@@ -77,21 +80,21 @@ d = 'd'
 def left():
     setMotor(a, -30)
     setMotor(d, 30)
-    time.sleep(0.8)
+    time.sleep(0.89)
     setMotor(a, 0)
     setMotor(d, 0)
 
 def right():
     setMotor(a, 30)
     setMotor(d, -30)
-    time.sleep(0.8)
+    time.sleep(0.89)
     setMotor(a, 0)
     setMotor(d, 0)
 
 def straight(t):
     setMotor(a, 30)
     setMotor(d, 0)
-    time.sleep(t)
+    time.sleep(5)
     setMotor(a, 0)
     setMotor(d, 0)
 
@@ -123,60 +126,79 @@ def userControl():
 def avoidObstacle():
     state = 'moving'
     x = 0
-    time.sleep(20)
+    time.sleep(4)
     while True:
         if state == 'moving':
-            moveDistance(5)
-            time.sleep(0.1)
-            if getDistance() < 15:
+            moveSpeed(10)
+            if getDistance() < 20:
+                print(getDistance())
                 state = 'state1'
+                print(state)
+                print('yaw')
         elif state == 'state1':
             left()
-            moveDistance(10)
+            moveDistance(17)
             x += 1
             right()
-            if getDistance() > 30:
-                left()
-                moveDistance(10)
-                x += 1
-                right()
-                state == 'state2'
-                moveDistance(30)
-                right()
+            time.sleep(0.1)
+            print(getDistance())
+            if getDistance() > 25:
+                print('yeet')
+                print(getDistance())
+##                left()
+##                moveDistance(3)
+##                right()
+                state = 'state2'
+                print(state)
+                moveDistance(300)
+
         elif state == 'state2':
-            if getDistance() < 30:
-                left()
-                moveDistance(20)
-                right()
-            else:
-                left()
-                moveDistance(20)
-                right()
-                state == 'state3'
-        elif state == 'state3':
-            for n in range(x):
-                moveDistance(20)
-                time.sleep(.1)
-            left()
-            moveDistance(50)
+
+            print('done')
             break
 
 def moveSpeed(cmps):
-    pd = (getMotor(1) + getMotor(4))/2
+    pd = cm(25)
     pt = time.time()
     #convert cm to angle
-    circumference = 24
-    goal = cmps * 360 / circumference
+    circumference = 25
+    goal = cmps
+    speed = 0
+    power = 0
+    adder = 0
+    max_power = 90
+    while getDistance() > 20:
+        d = cm(circumference)
+        t = time.time()
+        speed = (d - pd)/(t - pt)
+
+        adder = (goal - speed)/1
+        power += adder
+        if power > max_power:
+            power = max_power
+        elif power < 0:
+            power = 0
+        setMotor(1,power)
+        setMotor(4,power)
+        pd = d
+        pt = t
+
+def speed(cmps):
+    pd = cm(25)
+    pt = time.time()
+    #convert cm to angle
+    circumference = 25
+    goal = cmps
     speed = 0
     power = 0
     adder = 0
     max_power = 90
     while True:
-        d = (getMotor(1) + getMotor(4)) / 2
+        d = cm(circumference)
         t = time.time()
-        speed = (d - pd)/(t - pt)/(360 * circumference)
+        speed = (d - pd)/(t - pt)
 
-        adder = goal - speed
+        adder = (goal - speed)/0.8
         power += adder
         if power > max_power:
             power = max_power
@@ -188,24 +210,25 @@ def moveSpeed(cmps):
         pt = t
 
 
-def moveDistance(cm):
-    pd = (getMotor(1) + getMotor(4))/2
+def moveDistance(cmd):
+    start = cm(25)
+    pd = cm(25)
     pt = time.time()
     #convert cm to angle
-    circumference = 24
-    goal = pd + cm * 360 / circumference
+    circumference = 25
+    goal = pd + cmd
     speed = 0
     power = 0
     adder = 0
     max_power = 40
     count = 0
     while True:
-        d = (getMotor(1) + getMotor(4)) / 2
+        d = cm(25)
         t = time.time()
         speed = (d - pd)/(t - pt)/(360 * circumference)
 
         adder = (goal - d) / 10 - speed/10
-        print(adder)
+        
         power += adder
         if power > max_power:
             power = max_power
@@ -214,7 +237,7 @@ def moveDistance(cm):
         setMotor(1,power)
         setMotor(4,power)
         count += 1
-        if abs(speed) == 0 and abs(d - pd) == 0 and count > 200:
+        if cm(25) - start > cmd:
             setMotor(1,0)
             setMotor(4,0)
             break
@@ -239,7 +262,7 @@ try:
         elif do == 'ctrl':
             userControl()
         elif do == 'speed':
-            moveSpeed(5)
+            speed(5)
 
 
 except KeyboardInterrupt:
