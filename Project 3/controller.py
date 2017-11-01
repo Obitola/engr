@@ -5,6 +5,7 @@ import time  # import the time library for the sleep function
 import brickpi3  # import the BrickPi3 drivers
 import grovepi
 
+
 BP = brickpi3.BrickPi3()  # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
 BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.TOUCH)  # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
 BP.set_sensor_type(BP.PORT_2, BP.SENSOR_TYPE.LIGHT)  # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
@@ -23,12 +24,6 @@ def getTouch():
         return BP.get_sensor(BP.PORT_1)
     except brickpi3.SensorError:
         print('Error: Touch Sensor')
-
-def getLight():
-    try:
-        return BP.get_sensor(BP.PORT_2)
-    except brickpi3.SensorError:
-        print('Error: Light Sensor')
 
     # sets the power for the given motor
 def setMotor(motor, power):
@@ -81,7 +76,7 @@ c = 'c'
 d = 'd'
 
 def left():
-    setMotor(a, 0)
+    setMotor(a, -30)
     setMotor(d, 30)
     time.sleep(1.10)
     setMotor(a, 0)
@@ -89,7 +84,7 @@ def left():
 
 def right():
     setMotor(a, 30)
-    setMotor(d, 0)
+    setMotor(d, -30)
     time.sleep(1.10)
     setMotor(a, 0)
     setMotor(d, 0)
@@ -105,28 +100,135 @@ def stop():
     setMotor(a, 0)
     setMotor(d, 0)
 
+def userControl():
+    go = input('How to move:')
+    while True:
+        if go == 'r':
+            right()
+        elif go == 'l':
+            left()
+        elif go == 'm':
+            setMotor(1, 20)
+            setMotor(4, 20)
+        elif go == 's':
+            setMotor(1, 0)
+            setMotor(4, 0)
+        elif go == 'b':
+            setMotor(1,-10)
+            setMotor(4,-10)
+        elif go == 'stop':
+            break
+
+
+def avoidObstacle():
+    state = 'moving'
+    x = 0
+    while True:
+        if state == 'moving':
+            moveDistance(5)
+            time(0.1)
+            if getDistance() < 15:
+                state == 'state1'
+        elif state == 'state1':
+            left()
+            moveDistance(10)
+            x += 1
+            right()
+            if getDistance() > 30:
+                left()
+                moveDistance(10)
+                x += 1
+                right()
+                state == 'state2'
+                moveDistance(30)
+                right()
+        elif state == 'state2':
+            if getDistance() < 30:
+                left()
+                moveDistance(20)
+                right()
+            else:
+                left()
+                moveDistance(20)
+                right()
+                state == 'state3'
+        elif state == 'state3':
+            for n in range(x):
+                moveDistance(20)
+                time.sleep(.1)
+            left()
+            moveDistance(50)
+            break
+
+def moveSpeed(cmps):
+    pd = (getMotor(1) + getMotor(4))/2
+    pt = time.time()
+    #convert cm to angle
+    circumference = 8
+    goal = cmps * 360 / circumference
+    speed = 0
+    power = 0
+    adder = 0
+    max_power = 40
+    while True:
+        d = (getMotor(1) + getMotor(4)) / 2
+        t = time.time()
+        speed = (d - pd)/(t - pt)/(360 * circumference)
+
+        adder = goal - speed
+        power += adder
+        if power > max_power:
+            power = max_power
+        elif power < 0:
+            power = 0
+        pd = d
+        pt = t
+
+
+def moveDistance(cm):
+    pd = (getMotor(1) + getMotor(4))/2
+    pt = time.time()
+    #convert cm to angle
+    circumference = 8
+    goal = pd + cm * 360 / circumference
+    speed = 0
+    power = 0
+    adder = 0
+    max_power = 40
+    while True:
+        d = (getMotor(1) + getMotor(4)) / 2
+        t = time.time()
+        speed = (d - pd)/(t - pt)/(360 * circumference)
+
+        adder = (goal - d) / 1000 - speed
+        power += adder
+        if power > max_power:
+            power = max_power
+        elif power < 0:
+            power = 0
+        if abs(speed) < 10 and abs(d - pd) < 10:
+            setMotor(1,0)
+            setMotor(4,0)
+            break
+        pd = d
+        pt = t
+
+
+
+def ramp():
+    pass
+
 try:
     while True:
-        if getDistance < 15:
-            while getDistance() < 15:
-                right()
-                straight(2)
-                left()
+        do = input('What would you like to do')
+        if do == 'stop':
+            stop()
+            break
+        elif do == 'avoid':
+            avoidObstacle()
+        elif do == 'ramp':
+            ramp()
 
-
-
-
-        do = input('What to do:')
-        if do == 'left':
-
-        elif do == 'right':
-
-        elif do == 'straight':
-            setMotor(a,30)
-            setMotor(d,30)
-        elif do == 'stop':
-            setMotor(a,0)
-            setMotor(d,0)
 
 
 except KeyboardInterrupt:
