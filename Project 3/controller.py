@@ -80,16 +80,47 @@ b = 'b'
 c = 'c'
 d = 'd'
 
+def left():
+    setMotor(a, 0)
+    setMotor(d, 30)
+    time.sleep(1.10)
+    setMotor(a, 0)
+    setMotor(d, 0)
+
+def right():
+    setMotor(a, 30)
+    setMotor(d, 0)
+    time.sleep(1.10)
+    setMotor(a, 0)
+    setMotor(d, 0)
+
+def straight(t):
+    setMotor(a, 30)
+    setMotor(d, 0)
+    time.sleep(t)
+    setMotor(a, 0)
+    setMotor(d, 0)
+
+def stop():
+    setMotor(a, 0)
+    setMotor(d, 0)
 
 try:
     while True:
+        if getDistance < 15:
+            while getDistance() < 15:
+                right()
+                straight(2)
+                left()
+
+
+
+
         do = input('What to do:')
-        if do == 'right':
-            setMotor(a, 0)
-            setMotor(d, 30)
-        elif do == 'left':
-            setMotor(a, 30)
-            setMotor(d, 0)
+        if do == 'left':
+
+        elif do == 'right':
+
         elif do == 'straight':
             setMotor(a,30)
             setMotor(d,30)
