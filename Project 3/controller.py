@@ -10,262 +10,206 @@ BP = brickpi3.BrickPi3()  # Create an instance of the BrickPi3 class. BP will be
 BP.set_sensor_type(BP.PORT_2, BP.SENSOR_TYPE.TOUCH)  # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
 ultrasonic_sensor_port = 4
 
-# gets the distance value of the sensor
-def getDistance():
-    try:
-        return grovepi.ultrasonicRead(ultrasonic_sensor_port)
-    except brickpi3.SensorError:
-        print('Error: Distance Sensor')
 
-# checks if button is pressed
-def getTouch():
-    try:
-        return BP.get_sensor(BP.PORT_2)
-    except brickpi3.SensorError:
-        print('Error: Touch Sensor')
 
-    # sets the power for the given motor
-def setMotor(motor, power):
-    if motor == 1 or motor == 'a':
-        BP.set_motor_power(BP.PORT_A, power)
-    elif motor == 2 or motor == 'b':
-        BP.set_motor_power(BP.PORT_B, power)
-    elif motor == 3 or motor == 'c':
-        BP.set_motor_power(BP.PORT_C, power)
-    elif motor == 4 or motor == 'd':
-        BP.set_motor_power(BP.PORT_D, power)
-    else:
-        print('Not a valid motor')
+class PID(object):
+    """A generic PID loop controller which can be inherited and used in other control algorithms"""
 
-    # returns the orientation of the motor
-def getMotor(motor):
-    try:
+    def __init__(self, startingError):
+        """Return a instance of a un tuned PID controller"""
+        self._p = 1
+        self._i = 0
+        self._d = 0
+        self._esum = 0  # Error sum for integral term
+        self._le = startingError  # Last error value
+
+    def calculate(self, error, dt):
+        """Calculates the output of the PID controller"""
+        self._esum += error * dt
+        dError = (error - self._le) / dt
+        u = self._p * error + self._i * self._esum + self._d * dError
+        self._le = error
+        return u
+
+    def reset(self, startingError):
+        """Resets the integral sum and the last error value"""
+        self._esum = 0
+        self._le = startingError
+
+def cm():
+    return (snot.get_motor(1) + snot.get_motor(4)) / 2 * circumference / 360
+
+class mcms(object):
+
+    def __init__(self):
+        self.previous_x = cm()
+        self.previous_time = time.time() - 0.1
+        self.previous_speed = 0
+        self.delta_x = 0
+        self.delta_time = 0.1
+        self.delta_speed = 0
+        self.current_x = 0
+        self.current_time = time.time()
+        self.current_speed = 0
+        self.moving = False
+        self.desired_speed = 0
+        self.power = 0
+        self.steer = 0
+        self.pid = PID(0)
+        self.power_= {'a': 0, 'b': 0, 'c': 0, 'd': 0}
+        self.max_power = 400
+        self.circumference = 27
+
+    def update(self):
+        self.current_x = cm()
+        self.delta_x = self.current_x - self.previous
+
+        self.current_time = time.time()
+        self.delta_time = self.current_time - self.previous_time
+
+        self.current_speed = self.delta_x/self.delta_time
+        self.delta_speed = self.current_speed - self.previous_speed
+
+        self.previous_x = self.current_time
+        self.previous_time = self.current_time
+        self.previous_speed = self.current_speed
+
+        if self.moving:
+            self.power += self.pid.calculate(self.desired_speed - self.current_speed, self.delta_time)#round((self.current_speed - self.desired_speed) / 2)
+            self.set_motor(1,self.power * (1 + self.steer))
+            self.set_motor(4,self.power * (1 - self.steer))
+
+    # gets the distance value of the sensor
+    def get_ultrasonic_distance(self):
+        try:
+            return grovepi.ultrasonicRead(ultrasonic_sensor_port)
+        except brickpi3.SensorError:
+            print('Error: Distance Sensor')
+
+    # checks if button is pressed
+    def get_touch(self):
+        try:
+            return BP.get_sensor(BP.PORT_2)
+        except brickpi3.SensorError:
+            print('Error: Touch Sensor')
+            # sets the power for the given motor
+    def get_wheel_distance(self):
+        return (self.get_motor(1) + self.get_motor(4)) / 2 * self.circumference / 360
+
+    def set_motor(self, motor, amount):
         if motor == 1 or motor == 'a':
-            return BP.get_motor_encoder(BP.PORT_A)
+            self.power['a'] = amount
         elif motor == 2 or motor == 'b':
-            return BP.get_motor_encoder(BP.PORT_B)
+            self.power['b'] = amount
         elif motor == 3 or motor == 'c':
-            return BP.get_motor_encoder(BP.PORT_C)
+            self.power['c'] = amount
         elif motor == 4 or motor == 'd':
-            return BP.get_motor_encoder(BP.PORT_D)
+            self.power['d'] = amount
         else:
-            print('Not a valid motor')
-    except IOError as error:
-        print(error)
+            print('not a valid motor')
 
-def data():
-    print("Sensor: %6d Motor A: %6d  B: %6d  C: %6d  D: %6d" \
-          % (grovepi.ultrasonicRead(ultrasonic_sensor_port), \
-             BP.get_motor_encoder(BP.PORT_A), \
-             BP.get_motor_encoder(BP.PORT_B), \
-             BP.get_motor_encoder(BP.PORT_C), \
-             BP.get_motor_encoder(BP.PORT_D)))
+        if sum(self.power) > self.max_power:
+            power_wheels = (self.max_power - self.power['b'] - self.power['c']) / (self.power['a'] + self.power['d'])
+            BP.set_motor_power(BP.PORT_A, self.power['a'])
+            BP.set_motor_power(BP.PORT_B, power_wheels * self.power['b'])
+            BP.set_motor_power(BP.PORT_C, power_wheels * self.power['c'])
+            BP.set_motor_power(BP.PORT_D, self.power['d'])
 
-def stop():
-    BP.offset_motor_encoder(BP.PORT_A, BP.get_motor_encoder(BP.PORT_A))
-    BP.offset_motor_encoder(BP.PORT_B, BP.get_motor_encoder(BP.PORT_B))
-    BP.offset_motor_encoder(BP.PORT_C, BP.get_motor_encoder(BP.PORT_C))
-    BP.offset_motor_encoder(BP.PORT_D, BP.get_motor_encoder(BP.PORT_D))
+        else:
+            BP.set_motor_power(BP.PORT_A, self.power['a'])
+            BP.set_motor_power(BP.PORT_B, self.power['b'])
+            BP.set_motor_power(BP.PORT_C, self.power['c'])
+            BP.set_motor_power(BP.PORT_D, self.power['d'])
+    # returns the orientation of the motor
+    def get_motor(motor):
+        try:
+            if motor == 1 or motor == 'a':
+                return BP.get_motor_encoder(BP.PORT_A)
+            elif motor == 2 or motor == 'b':
+                return BP.get_motor_encoder(BP.PORT_B)
+            elif motor == 3 or motor == 'c':
+                return BP.get_motor_encoder(BP.PORT_C)
+            elif motor == 4 or motor == 'd':
+                return BP.get_motor_encoder(BP.PORT_D)
+            else:
+                print('Not a valid motor')
+        except IOError as error:
+            print(error)
 
-    BP.reset_all()
+    def data(self):
+        print("Sensor: %6d Motor A: %6d  B: %6d  C: %6d  D: %6d" \
+              % (grovepi.ultrasonicRead(ultrasonic_sensor_port), \
+                 BP.get_motor_encoder(BP.PORT_A), \
+                 BP.get_motor_encoder(BP.PORT_B), \
+                 BP.get_motor_encoder(BP.PORT_C), \
+                 BP.get_motor_encoder(BP.PORT_D)))
 
-def cm(circumference):
-    return (getMotor(1)+getMotor(4))/2 *circumference / 360
+    def shutdown(self):
+        BP.offset_motor_encoder(BP.PORT_A, BP.get_motor_encoder(BP.PORT_A))
+        BP.offset_motor_encoder(BP.PORT_B, BP.get_motor_encoder(BP.PORT_B))
+        BP.offset_motor_encoder(BP.PORT_C, BP.get_motor_encoder(BP.PORT_C))
+        BP.offset_motor_encoder(BP.PORT_D, BP.get_motor_encoder(BP.PORT_D))
 
-a = 'a'
-b = 'b'
-c = 'c'
-d = 'd'
+        BP.reset_all()
 
-def left():
-    setMotor(a, -30)
-    setMotor(d, 30)
-    time.sleep(0.89)
-    setMotor(a, 0)
-    setMotor(d, 0)
+    def set_speed(self, speed):
+        self.desired_speed = speed
+        self.moving = True
 
-def right():
-    setMotor(a, 30)
-    setMotor(d, -30)
-    time.sleep(0.89)
-    setMotor(a, 0)
-    setMotor(d, 0)
+    def straight(self):
+        self.steer = 0
 
-def straight(t):
-    setMotor(a, 30)
-    setMotor(d, 0)
-    time.sleep(5)
-    setMotor(a, 0)
-    setMotor(d, 0)
+    def set_steer(self, direction, amount):
+        if direction == 'right':
+            self.steer = amount
+        elif direction == 'left':
+            self.steer = -amount
 
-def stop():
-    setMotor(a, 0)
-    setMotor(d, 0)
+    def turn_left(self):
+        self.set_steer('left',1)
+
+    def turn_right(self):
+        self.set_steer('right', 1)
+
+    def stop(self):
+        self.moving = False
+        self.set_motor(1, 0)
+        self.set_motor(4, 0)
+
+snot = mcms()
+
+
 
 def userControl():
     go = input('How to move:')
     while True:
         go = input('How to move:')
         if go == 'r':
-            right()
+            snot.set_steer('left', 0.3)
         elif go == 'l':
-            left()
+            snot.set_steer('right', 0.3)
+            snot.steer('right',)
         elif go == 'm':
-            setMotor(1, 80)
-            setMotor(4, 80)
+            snot.set_speed(20)
         elif go == 's':
-            setMotor(1, 0)
-            setMotor(4, 0)
+            snot.stop()
         elif go == 'b':
-            setMotor(1,-10)
-            setMotor(4,-10)
+            snot.set_speed(-15)
         elif go == 'stop':
             break
-
-
-def avoidObstacle():
-    state = 'moving'
-    x = 0
-    time.sleep(4)
-    while True:
-        if state == 'moving':
-            moveSpeed(10)
-            if getDistance() < 20:
-                print(getDistance())
-                state = 'state1'
-                print(state)
-                print('yaw')
-        elif state == 'state1':
-            left()
-            moveDistance(17)
-            x += 1
-            right()
-            time.sleep(0.1)
-            print(getDistance())
-            if getDistance() > 25:
-                print('yeet')
-                print(getDistance())
-##                left()
-##                moveDistance(3)
-##                right()
-                state = 'state2'
-                print(state)
-                moveDistance(300)
-
-        elif state == 'state2':
-
-            print('done')
-            break
-
-def moveSpeed(cmps):
-    pd = cm(25)
-    pt = time.time()
-    #convert cm to angle
-    circumference = 25
-    goal = cmps
-    speed = 0
-    power = 0
-    adder = 0
-    max_power = 90
-    while getDistance() > 20:
-        d = cm(circumference)
-        t = time.time()
-        speed = (d - pd)/(t - pt)
-
-        adder = (goal - speed)/1
-        power += adder
-        if power > max_power:
-            power = max_power
-        elif power < 0:
-            power = 0
-        setMotor(1,power)
-        setMotor(4,power)
-        pd = d
-        pt = t
-
-def speed(cmps):
-    pd = cm(25)
-    pt = time.time()
-    #convert cm to angle
-    circumference = 25
-    goal = cmps
-    speed = 0
-    power = 0
-    adder = 0
-    max_power = 90
-    while True:
-        d = cm(circumference)
-        t = time.time()
-        speed = (d - pd)/(t - pt)
-
-        adder = (goal - speed)/0.8
-        power += adder
-        if power > max_power:
-            power = max_power
-        elif power < 0:
-            power = 0
-        setMotor(1,power)
-        setMotor(4,power)
-        pd = d
-        pt = t
-
-
-def moveDistance(cmd):
-    start = cm(25)
-    pd = cm(25)
-    pt = time.time()
-    #convert cm to angle
-    circumference = 25
-    goal = pd + cmd
-    speed = 0
-    power = 0
-    adder = 0
-    max_power = 40
-    count = 0
-    while True:
-        d = cm(25)
-        t = time.time()
-        speed = (d - pd)/(t - pt)/(360 * circumference)
-
-        adder = (goal - d) / 10 - speed/10
-        
-        power += adder
-        if power > max_power:
-            power = max_power
-        elif power < 0:
-            power = 0
-        setMotor(1,power)
-        setMotor(4,power)
-        count += 1
-        if cm(25) - start > cmd:
-            setMotor(1,0)
-            setMotor(4,0)
-            break
-        pd = d
-        pt = t
-
-
-
-def ramp():
-    pass
 
 try:
     while True:
         do = input('What would you like to do')
-        if do == 'stop':
-            stop()
+        if do == 'shutdown':
+            snot.shutdown()
             break
-        elif do == 'avoid':
-            avoidObstacle()
-        elif do == 'ramp':
-            ramp()
         elif do == 'ctrl':
             userControl()
-        elif do == 'speed':
-            speed(5)
+
 
 
 except KeyboardInterrupt:
     pass
 
-stop()
+snot.shutdown()

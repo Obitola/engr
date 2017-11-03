@@ -136,13 +136,7 @@ def pumpHouseCost():
 def bendCost():
     return bendFittings1() + bendFittings2() + bendFittings3() + bendFittings4()
 
-def roadCost():
-    if zone == 1:
-        return 40000
-    elif zone == 2:
-        return 100000
-    elif zone == 3:
-        return 150000
+
 
 
 def sitePrepCost():
