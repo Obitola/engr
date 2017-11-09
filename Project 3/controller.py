@@ -7,48 +7,44 @@ import grovepi
 
 
 BP = brickpi3.BrickPi3()  # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
-BP.set_sensor_type(BP.PORT_2, BP.SENSOR_TYPE.TOUCH)  # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
+BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.TOUCH) # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
+
 ultrasonic_sensor_port = 4
 
-
-
+#A generic PID loop controller for control algorithms
 class PID(object):
-    """A generic PID loop controller which can be inherited and used in other control algorithms"""
 
+    # Return a instance of a un tuned PID controller
     def __init__(self, startingError):
-        """Return a instance of a un tuned PID controller"""
         self._p = 1
         self._i = 0
         self._d = 0
         self._esum = 0  # Error sum for integral term
         self._le = startingError  # Last error value
 
+    # Calculates the output of the PID controller
     def calculate(self, error, dt):
-        """Calculates the output of the PID controller"""
         self._esum += error * dt
         dError = (error - self._le) / dt
         u = self._p * error + self._i * self._esum + self._d * dError
         self._le = error
         return u
 
+    # Resets the integral sum and the last error value
     def reset(self, startingError):
-        """Resets the integral sum and the last error value"""
         self._esum = 0
         self._le = startingError
-
-def cm():
-    return (snot.get_motor(1) + snot.get_motor(4)) / 2 * circumference / 360
 
 class mcms(object):
 
     def __init__(self):
-        self.previous_x = cm()
+        self.previous_x = 0
         self.previous_time = time.time() - 0.1
         self.previous_speed = 0
         self.delta_x = 0
         self.delta_time = 0.1
         self.delta_speed = 0
-        self.current_x = 0
+        self.current_x = self.get_wheel_distance()
         self.current_time = time.time()
         self.current_speed = 0
         self.moving = False
@@ -59,9 +55,10 @@ class mcms(object):
         self.power_= {'a': 0, 'b': 0, 'c': 0, 'd': 0}
         self.max_power = 400
         self.circumference = 27
+        self.desired_speed = 0
 
     def update(self):
-        self.current_x = cm()
+        self.current_x = self.get_wheel_distance()
         self.delta_x = self.current_x - self.previous
 
         self.current_time = time.time()
@@ -75,9 +72,21 @@ class mcms(object):
         self.previous_speed = self.current_speed
 
         if self.moving:
-            self.power += self.pid.calculate(self.desired_speed - self.current_speed, self.delta_time)#round((self.current_speed - self.desired_speed) / 2)
+            self.desired_x = self.desired_speed * self.delta_time + self.previous_x
+            if self.current_x == self.desired_x:
+                self.pid.reset(0)
+            self.power += self.pid.calculate((self.desired_x - self.current_x), self.delta_time)#round((self.current_speed - self.desired_speed) / 2)
             self.set_motor(1,self.power * (1 + self.steer))
             self.set_motor(4,self.power * (1 - self.steer))
+
+    def move_distance(self, distance, speed):
+        self.update()
+        start_time = self.current_time
+        total_time = distance / speed
+        while self.current_time - start_time < total_time:
+            self.update()
+        self.stop()
+
 
     # gets the distance value of the sensor
     def get_ultrasonic_distance(self):
@@ -89,7 +98,7 @@ class mcms(object):
     # checks if button is pressed
     def get_touch(self):
         try:
-            return BP.get_sensor(BP.PORT_2)
+            return BP.get_sensor(BP.PORT_1)
         except brickpi3.SensorError:
             print('Error: Touch Sensor')
             # sets the power for the given motor
@@ -110,16 +119,17 @@ class mcms(object):
 
         if sum(self.power) > self.max_power:
             power_wheels = (self.max_power - self.power['b'] - self.power['c']) / (self.power['a'] + self.power['d'])
-            BP.set_motor_power(BP.PORT_A, self.power['a'])
-            BP.set_motor_power(BP.PORT_B, power_wheels * self.power['b'])
-            BP.set_motor_power(BP.PORT_C, power_wheels * self.power['c'])
-            BP.set_motor_power(BP.PORT_D, self.power['d'])
+            BP.set_motor_power(BP.PORT_A, power_wheels * self.power['a'])
+            BP.set_motor_power(BP.PORT_B, self.power['b'])
+            BP.set_motor_power(BP.PORT_C, self.power['c'])
+            BP.set_motor_power(BP.PORT_D, power_wheels * self.power['d'])
 
         else:
             BP.set_motor_power(BP.PORT_A, self.power['a'])
             BP.set_motor_power(BP.PORT_B, self.power['b'])
             BP.set_motor_power(BP.PORT_C, self.power['c'])
             BP.set_motor_power(BP.PORT_D, self.power['d'])
+
     # returns the orientation of the motor
     def get_motor(motor):
         try:
@@ -188,7 +198,6 @@ def userControl():
             snot.set_steer('left', 0.3)
         elif go == 'l':
             snot.set_steer('right', 0.3)
-            snot.steer('right',)
         elif go == 'm':
             snot.set_speed(20)
         elif go == 's':
@@ -199,6 +208,8 @@ def userControl():
             break
 
 try:
+    #todo: implement mcms push button controls
+    #todo: implement line following control
     while True:
         do = input('What would you like to do')
         if do == 'shutdown':
@@ -206,8 +217,6 @@ try:
             break
         elif do == 'ctrl':
             userControl()
-
-
 
 except KeyboardInterrupt:
     pass
