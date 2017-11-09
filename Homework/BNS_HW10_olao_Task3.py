@@ -3,8 +3,15 @@ from math import sqrt
 
 def calculate_w(l, c):
     return 1 / sqrt(l * c)
-#file = input('Input the name of the file:')
-lines = list(open('practice.txt', 'r'))
+file = input('Input the name of the file:')
+try:
+    lines = list(open(file, 'r'))
+except FileNotFoundError:
+    lines = []
+except IOError:
+    lines = []
+except PermissionError:
+    lines = []
 
 for x in range(len(lines)):
     count = 0
