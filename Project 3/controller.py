@@ -4,6 +4,8 @@ from __future__ import division  # ''
 import time  # import the time library for the sleep function
 import brickpi3  # import the BrickPi3 drivers
 import grovepi
+import pygame
+
 
 
 BP = brickpi3.BrickPi3()  # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
@@ -18,7 +20,7 @@ class PID(object):
     def __init__(self, startingError):
         self._p = 1
         self._i = 0
-        self._d = 0
+        self._d = 0.4
         self._esum = 0  # Error sum for integral term
         self._le = startingError  # Last error value
 
@@ -52,14 +54,14 @@ class mcms(object):
         self.power = 0
         self.steer = 0
         self.pid = PID(0)
-        self.power_= {'a': 0, 'b': 0, 'c': 0, 'd': 0}
-        self.max_power = 400
+        self.power_= [0,0,0,0]
+        self.max_power = 60
         self.circumference = 27
         self.desired_speed = 0
 
     def update(self):
         self.current_x = self.get_wheel_distance()
-        self.delta_x = self.current_x - self.previous
+        self.delta_x = self.current_x - self.previous_x
 
         self.current_time = time.time()
         self.delta_time = self.current_time - self.previous_time
@@ -87,7 +89,6 @@ class mcms(object):
             self.update()
         self.stop()
 
-
     # gets the distance value of the sensor
     def get_ultrasonic_distance(self):
         try:
@@ -106,32 +107,23 @@ class mcms(object):
         return (self.get_motor(1) + self.get_motor(4)) / 2 * self.circumference / 360
 
     def set_motor(self, motor, amount):
-        if motor == 1 or motor == 'a':
-            self.power['a'] = amount
-        elif motor == 2 or motor == 'b':
-            self.power['b'] = amount
-        elif motor == 3 or motor == 'c':
-            self.power['c'] = amount
-        elif motor == 4 or motor == 'd':
-            self.power['d'] = amount
-        else:
-            print('not a valid motor')
+        self.power[motor] = amount
 
         if sum(self.power) > self.max_power:
-            power_wheels = (self.max_power - self.power['b'] - self.power['c']) / (self.power['a'] + self.power['d'])
-            BP.set_motor_power(BP.PORT_A, power_wheels * self.power['a'])
-            BP.set_motor_power(BP.PORT_B, self.power['b'])
-            BP.set_motor_power(BP.PORT_C, self.power['c'])
-            BP.set_motor_power(BP.PORT_D, power_wheels * self.power['d'])
+            power_wheels = (self.max_power - self.power[2] - self.power[3]) / (self.power[1] + self.power[4])
+            BP.set_motor_power(BP.PORT_A, power_wheels * self.power[1])
+            BP.set_motor_power(BP.PORT_B, self.power[2])
+            BP.set_motor_power(BP.PORT_C, self.power[3])
+            BP.set_motor_power(BP.PORT_D, power_wheels * self.power[4])
 
         else:
-            BP.set_motor_power(BP.PORT_A, self.power['a'])
-            BP.set_motor_power(BP.PORT_B, self.power['b'])
-            BP.set_motor_power(BP.PORT_C, self.power['c'])
-            BP.set_motor_power(BP.PORT_D, self.power['d'])
+            BP.set_motor_power(BP.PORT_A, self.power[1])
+            BP.set_motor_power(BP.PORT_B, self.power[2])
+            BP.set_motor_power(BP.PORT_C, self.power[3])
+            BP.set_motor_power(BP.PORT_D, self.power[4])
 
     # returns the orientation of the motor
-    def get_motor(motor):
+    def get_motor(self, motor):
         try:
             if motor == 1 or motor == 'a':
                 return BP.get_motor_encoder(BP.PORT_A)
@@ -165,6 +157,9 @@ class mcms(object):
     def set_speed(self, speed):
         self.desired_speed = speed
         self.moving = True
+        self.pid.reset(0)
+        self.desired_x = self.current_x
+        self.update()
 
     def straight(self):
         self.steer = 0
@@ -186,24 +181,33 @@ class mcms(object):
         self.set_motor(1, 0)
         self.set_motor(4, 0)
 
+        self.set_motor(2, 0)
+        self.set_motor(3, 0)
+
 snot = mcms()
-
-
 
 def userControl():
     go = input('How to move:')
     while True:
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
         go = input('How to move:')
-        if go == 'r':
+        if go == 'r'    :
             snot.set_steer('left', 0.3)
         elif go == 'l':
             snot.set_steer('right', 0.3)
+        elif go == 'f':
+            snot.set_steer('right', 0)
         elif go == 'm':
-            snot.set_speed(20)
+            snot.set_motor(1,10)
+            snot.set_motor(4,10)
         elif go == 's':
             snot.stop()
         elif go == 'b':
-            snot.set_speed(-15)
+            snot.set_motor(1, -10)
+            snot.set_motor(4, -10)
         elif go == 'stop':
             break
 

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from math import floor
 
-file = input('Input the name of the file:')
+file = 'numbers.txt'
 try:
     lines = list(open(file, 'r'))
 except FileNotFoundError:
@@ -30,5 +30,5 @@ x_data.append(v_data[0])
 for x in range(1, len(v_data)):
     x_data.append(x_data[x - 1] + v_data[x])
 
-print(v_data)
-print(x_data)
+t_data = range(len(x_data))
+plt.plot(t_data, x_data)
