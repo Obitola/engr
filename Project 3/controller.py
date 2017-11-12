@@ -75,8 +75,6 @@ class mcms(object):
 
         if self.moving:
             self.desired_x = self.desired_speed * self.delta_time + self.previous_x
-            if self.current_x == self.desired_x:
-                self.pid.reset(0)
             self.power += self.pid.calculate((self.desired_x - self.current_x), self.delta_time)#round((self.current_speed - self.desired_speed) / 2)
             self.set_motor(1,self.power * (1 + self.steer))
             self.set_motor(4,self.power * (1 - self.steer))
@@ -166,9 +164,13 @@ class mcms(object):
 
     def set_steer(self, direction, amount):
         if direction == 'right':
-            self.steer = amount
+            self.steer += amount
         elif direction == 'left':
-            self.steer = -amount
+            self.steer -= -amount
+        if self.steer > 1:
+            self.steer = 1
+        elif self.steer < -1:
+            self.steer = -1
 
     def turn_left(self):
         self.set_steer('left',1)
@@ -187,40 +189,60 @@ class mcms(object):
 snot = mcms()
 
 def userControl():
-    go = input('How to move:')
+    speed = 0
     while True:
         events = pygame.event.get()
         for event in events:
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RIGHT:
+                    snot.set_steer('right', 0.1)
                 if event.key == pygame.K_LEFT:
-        go = input('How to move:')
-        if go == 'r'    :
-            snot.set_steer('left', 0.3)
-        elif go == 'l':
-            snot.set_steer('right', 0.3)
-        elif go == 'f':
-            snot.set_steer('right', 0)
-        elif go == 'm':
-            snot.set_motor(1,10)
-            snot.set_motor(4,10)
+                    snot.set_steer('left', 0.1)
+                if event.key == pygame.K_UP:
+                    speed += 3
+                    snot.set_speed(speed)
+                if event.key == pygame.K_DOWN:
+                    speed -= 3
+                    snot.set_speed(speed)
+                if event.key == pygame.K_b:
+                    speed = 0
+                    snot.stop()
+                if event.key == pygame.K_s:
+                    speed = 0
+                    snot.stop()
+                    break
+        snot.update()
+
+def test():
+    while True:
+        go = input('todo')
+        if go == 'f':
+            snot.set_motor(1,20)
+            snot.set_motor(4,20)
         elif go == 's':
-            snot.stop()
-        elif go == 'b':
-            snot.set_motor(1, -10)
-            snot.set_motor(4, -10)
+            snot.set_motor(1,0)
+            snot.set_motor(4,0)
+        elif go == 'r':
+            snot.set_motor(1, 30)
+            snot.set_motor(4, 10)
+        elif go == 'l':
+            snot.set_motor(1, 10)
+            snot.set_motor(4, 30)
         elif go == 'stop':
+            snot.stop()
             break
 
 try:
     #todo: implement mcms push button controls
     #todo: implement line following control
     while True:
-        do = input('What would you like to do')
-        if do == 'shutdown':
-            snot.shutdown()
-            break
-        elif do == 'ctrl':
+        go = input('what would you like to do')
+        if go == 'ctrl':
             userControl()
+        elif go == 'test':
+            test()
+        elif go = 'stop':
+            break
 
 except KeyboardInterrupt:
     pass
