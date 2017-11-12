@@ -241,7 +241,7 @@ try:
             userControl()
         elif go == 'test':
             test()
-        elif go = 'stop':
+        elif go == 'stop':
             break
 
 except KeyboardInterrupt:
