@@ -5,8 +5,8 @@
 % olao
 % Dave Guo
 % guo431
-% Vivian Guo
-% vguo
+% Nabeel Khattab
+% nalkahtt
 % Section: 3
 % Team: 45
 %
