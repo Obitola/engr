@@ -18,9 +18,9 @@ class PID(object):
 
     # Return a instance of a un tuned PID controller
     def __init__(self, startingError):
-        self._p = 1
+        self._p = 0.1
         self._i = 0
-        self._d = 0.4
+        self._d = 0.1
         self._esum = 0  # Error sum for integral term
         self._le = startingError  # Last error value
 
@@ -43,47 +43,36 @@ class mcms(object):
         self.previous_x = 0
         self.previous_time = time.time() - 0.1
         self.previous_speed = 0
-        self.delta_x = 0
-        self.delta_time = 0.1
-        self.delta_speed = 0
-        self.current_x = self.get_wheel_distance()
-        self.current_time = time.time()
         self.current_speed = 0
         self.moving = False
         self.desired_speed = 0
         self.power = 0
         self.steer = 0
         self.pid = PID(0)
-        self.power_= [0,0,0,0]
-        self.max_power = 60
+        self.power_= [0,0,0,0,0]
+        self.max_power = 100
         self.circumference = 27
         self.desired_speed = 0
 
     def update(self):
-        self.current_x = self.get_wheel_distance()
-        self.delta_x = self.current_x - self.previous_x
-
-        self.current_time = time.time()
-        self.delta_time = self.current_time - self.previous_time
-
-        self.current_speed = self.delta_x/self.delta_time
-        self.delta_speed = self.current_speed - self.previous_speed
-
-        self.previous_x = self.current_time
-        self.previous_time = self.current_time
-        self.previous_speed = self.current_speed
+        self.current_speed = (self.get_wheel_distance() - self.previous_x) / (time.time() - self.previous_time)
 
         if self.moving:
-            self.desired_x = self.desired_speed * self.delta_time + self.previous_x
-            self.power += self.pid.calculate((self.desired_x - self.current_x), self.delta_time)#round((self.current_speed - self.desired_speed) / 2)
+            self.desired_x = self.desired_speed (time.time() - self.previous_time) + self.previous_x
+            self.power += self.pid.calculate((self.desired_x - self.get_wheel_distance()), time.time() - self.previous_time())#round((self.current_speed - self.desired_speed) / 2)
             self.set_motor(1,self.power * (1 + self.steer))
             self.set_motor(4,self.power * (1 - self.steer))
 
+        self.previous_x = self.get_wheel_distance()
+        self.previous_time = time.time()
+        self.previous_speed = self.current_speed
+        time.sleep(0.1)
+
     def move_distance(self, distance, speed):
         self.update()
-        start_time = self.current_time
+        start_time = time.time()
         total_time = distance / speed
-        while self.current_time - start_time < total_time:
+        while time.time() - start_time < total_time:
             self.update()
         self.stop()
 
@@ -101,8 +90,9 @@ class mcms(object):
         except brickpi3.SensorError:
             print('Error: Touch Sensor')
             # sets the power for the given motor
+
     def get_wheel_distance(self):
-        return (self.get_motor(1) + self.get_motor(4)) / 2 * self.circumference / 360
+        return ((self.get_motor(1) + self.get_motor(4)) / 2) * (27 / 360)
 
     def set_motor(self, motor, amount):
         self.power[motor] = amount
@@ -188,30 +178,7 @@ class mcms(object):
 
 snot = mcms()
 
-def userControl():
-    speed = 0
-    while True:
-        events = pygame.event.get()
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RIGHT:
-                    snot.set_steer('right', 0.1)
-                if event.key == pygame.K_LEFT:
-                    snot.set_steer('left', 0.1)
-                if event.key == pygame.K_UP:
-                    speed += 3
-                    snot.set_speed(speed)
-                if event.key == pygame.K_DOWN:
-                    speed -= 3
-                    snot.set_speed(speed)
-                if event.key == pygame.K_b:
-                    speed = 0
-                    snot.stop()
-                if event.key == pygame.K_s:
-                    speed = 0
-                    snot.stop()
-                    break
-        snot.update()
+
 
 def test():
     while True:
@@ -237,9 +204,7 @@ try:
     #todo: implement line following control
     while True:
         go = input('what would you like to do')
-        if go == 'ctrl':
-            userControl()
-        elif go == 'test':
+        if go == 'test':
             test()
         elif go == 'stop':
             break

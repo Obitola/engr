@@ -9,6 +9,9 @@ for x = X
     i = i + 1;
 end
 plot(X, Y);
+title('Approximation of sin(x)');
+xlabel('X (radians)');
+ylabel('Y (sin(x))');
 
 function answer = yplot(x)
     a = x;
