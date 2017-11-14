@@ -4,9 +4,9 @@
 % By: Oluwatobi Ola
 % olao
 % Dave Guo
-% 
+% guo431
 % Vivian Guo
-% 
+% vguo
 % Section: 3
 % Team: 45
 %
