@@ -5,15 +5,15 @@
 % olao
 % Dave Guo
 % guo431
-% Vivian Guo
-% vguo
+% Nabeel Khattab
+% nalkahtt
 % Section: 3
 % Team: 45
 %
 % ELECTRONIC SIGNATURE
 % Oluwatobi Ola
 % Dave Guo
-% Vivian Guo
+% Nabeel Khattab
 %
 % The electronic signatures above indicate that the program
 % submitted for evaluation is the combined effort of all
