@@ -1,6 +1,6 @@
 % In Class Task Bonus
 % File: ML_ACT_Task5_olao.py
-% Date: 29 October 2017
+% Date: 15 November 2017
 % By: Oluwatobi Ola
 % olao
 % Dave Guo
@@ -30,3 +30,4 @@ clc;
 x = input('Which pin package would you like to do? (1: LQFP100 | 2: LQFP144 | 3: QFP176)');
 pin = ['LQFP100'; 'LQFP144'; 'LQFP176'];
 output = pin(x, :);
+disp(output);
