@@ -40,7 +40,7 @@ end
 
 f1 = figure;
 plot(X,y1,X,y2);
-title('Figure 1');
+title('Not sure what to title this');
 xlabel('X');
 ylabel('Y');
 legend('Eq1','Eq2');
@@ -48,18 +48,18 @@ legend('Eq1','Eq2');
 f2 = figure;
 subplot(1,2,1);
 plot(X,y1);
-title('F(x)');
+title('Not sure what to title this');
 xlabel('X');
 ylabel('Y');
 subplot(1,2,2);
 plot(X,y3);
-title('F(x) A=2');
+title('Not sure what to title this');
 xlabel('X');
 ylabel('Y');
 
 f3 = figure;
 plot(X,y1,X,y4);
-title('Figure 3');
+title('Not sure what to title this');
 xlabel('X');
 ylabel('Y');
 legend('Eq1','Eq2')
@@ -67,24 +67,24 @@ legend('Eq1','Eq2')
 f4 = figure;
 subplot(2,2,1);
 plot(X,y1,X,y4);
-title('A=3');
+title('Not sure what to title this');
 xlabel('X');
 ylabel('Y');
 legend('Eq1','Eq2')
 subplot(2,2,2);
 plot(X,y1,X,y4);
-title('A=3');
+title('Not sure what to title this');
 xlabel('X');
 ylabel('Y');
 legend('Eq1','Eq2')
 subplot(2,2,3);
 plot(X,y1);
-title('A=3');
+title('Not sure what to title this');
 xlabel('X');
 ylabel('Y');
 subplot(2,2,4);
 plot(X,y4);
-title('A=3');
+title('Not sure what to title this');
 xlabel('X');
 ylabel('Y');
 
@@ -99,6 +99,5 @@ function answer = eq2(x, A)
     a = x;
     b = x.^2/factorial(2);
     c = x.^3/factorial(3);
-    d = x.^4/factorial(4);
-    answer = A * (1 + a + b + c + d);
+    answer = A * (1 + a + b + c);
 end

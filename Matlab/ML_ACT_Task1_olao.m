@@ -1,19 +1,19 @@
 % In Class Task Bonus
 % File: ML_ACT_Task1_olao.py
-% Date: 29 October 2017
+% Date: 15 November 2017
 % By: Oluwatobi Ola
 % olao
 % Dave Guo
 % guo431
-% Vivian Guo
-% vguo
+% Nabeel Khattab
+% nalkahtt
 % Section: 3
 % Team: 45
 %
 % ELECTRONIC SIGNATURE
 % Oluwatobi Ola
 % Dave Guo
-% Vivian Guo
+% Nabeel Khattab
 %
 % The electronic signatures above indicate that the program
 % submitted for evaluation is the combined effort of all
