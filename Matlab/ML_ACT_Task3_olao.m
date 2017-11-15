@@ -1,5 +1,5 @@
 % In Class Task Bonus
-% File: ML_ACT_Task3_olao.py
+% File: ML_ACT_Task3.py
 % Date: 15 November 2017
 % By: Oluwatobi Ola
 % olao
@@ -26,27 +26,23 @@
 
 clear;
 clc;
-
-x1 = 0:2:10;
-x2 = 0:1:10;
-x3 = 0:0.01:10;
-
-i = 1;
-for x = x1
-    y1(i) = sin(x);
-    i = i + 1;
+t1 = [0:2:10];
+for i = [1:6]
+    a1(i) = sin(t1(i));
 end
-
-i = 1;
-for x = x2
-    y2(i) = sin(x);
-    i = i + 1;
+figure(1);
+plot(t1,a1);
+%%
+t2 = [0:1:10];
+for i = [1:11]
+    a2(i) = sin(t2(i));
 end
-
-i = 1;
-for x = x3
-    y3(i) = sin(x);
-    i = i + 1;
+figure(1);
+plot(t2,a2);
+%%
+t3 = [0:0.01:10];
+for i = [1:1001];
+    a3(i) = sin(t3(i));
 end
-
-plot(x1,y1,x2,y2,x3,y3);
+figure
+plot(t1,a1,t2,a2,t3,a3)

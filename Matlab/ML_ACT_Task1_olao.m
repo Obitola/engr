@@ -1,5 +1,5 @@
 % In Class Task Bonus
-% File: ML_ACT_Task1_olao.py
+% File: ML_ACT_Task1.py
 % Date: 15 November 2017
 % By: Oluwatobi Ola
 % olao

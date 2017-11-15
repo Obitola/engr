@@ -1,5 +1,5 @@
 % In Class Task Bonus
-% File: ML_ACT_Task4_olao.py
+% File: ML_ACT_Task4.py
 % Date: 15 November 2017
 % By: Oluwatobi Ola
 % olao
@@ -24,12 +24,14 @@
 %
 % Works
 
+
 clear;
 clc;
-
-j = 1:100;
-for x = j
-    rolls(x) = randi(6) + randi(6) + randi(6);
+for i = [1:99]
+    a(i) = randi(6);
+    b(i) = randi(6);
+    c(i) = randi(6);
 end
-disp(rolls);
-histogram(rolls,6);
+d = [a;b;c;];
+
+histogram(d,6);
