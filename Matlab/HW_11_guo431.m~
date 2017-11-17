@@ -1,0 +1,38 @@
+% Homework 11: Part 6
+% File: HW_11_guo431.m
+% Date: 17 November 2017
+% By: Dave Guo
+% guo431
+% Section: 2
+% Team: 
+%
+% ELECTRONIC SIGNATURE
+% Dave Guo
+%
+% The electronic signature above indicates that the program
+% submitted for evaluation is my individual work. I have
+% a general understanding of all aspects of its development
+% and execution.
+%
+% Force vs Distance
+
+clear;
+clc;
+coef1 = [480:600];
+for i = [1:121]
+    func1(i) = coef1(i)*8/(588*sin(pi/6)+211.68*cos(pi/6));
+end
+figure(1);
+
+
+coef2 = [480:600];
+for i = [1:121]
+    func2(i) = coef2(i)*8/(588*sin(pi/6)+246.96*cos(pi/6));
+end
+figure(1);
+plot(coef1,func1,coef2,func2);
+
+xlabel("Exerted Force(Newtons)");
+ylabel("Maximum Distance(Meters)");
+title('Exerted Force vs Maximum Distance');
+legend("Friction coefficient = .36","Friction coefficient = .42");
