@@ -3,13 +3,15 @@ from __future__ import division  # ''
 
 import time  # import the time library for the sleep function
 import brickpi3  # import the BrickPi3 drivers
-import grovepi
-import pygame
-
+#import grovepi
+import MasterFunct
+import smbus
+from math import pi
 
 
 BP = brickpi3.BrickPi3()  # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
 BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.TOUCH) # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
+BP.set_sensor_type(BP.PORT_2, BP.SENSOR_TYPE.LIGHT)
 
 ultrasonic_sensor_port = 4
 
@@ -18,9 +20,9 @@ class PID(object):
 
     # Return a instance of a un tuned PID controller
     def __init__(self, startingError):
-        self._p = 0.1
-        self._i = 0
-        self._d = 0.1
+        self._p = 0.3
+        self._i = 0.3
+        self._d = 0.0
         self._esum = 0  # Error sum for integral term
         self._le = startingError  # Last error value
 
@@ -40,32 +42,29 @@ class PID(object):
 class mcms(object):
 
     def __init__(self):
-        self.previous_x = 0
+        self.previous_x = self.get_wheel_distance()
         self.previous_time = time.time() - 0.1
-        self.previous_speed = 0
         self.current_speed = 0
         self.moving = False
         self.desired_speed = 0
         self.power = 0
         self.steer = 0
         self.pid = PID(0)
-        self.power_= [0,0,0,0,0]
+        self.power_list = [0,0,0,0,0]
         self.max_power = 100
-        self.circumference = 27
+        self.radius = 27
         self.desired_speed = 0
 
     def update(self):
         self.current_speed = (self.get_wheel_distance() - self.previous_x) / (time.time() - self.previous_time)
 
-        if self.moving:
-            self.desired_x = self.desired_speed (time.time() - self.previous_time) + self.previous_x
-            self.power += self.pid.calculate((self.desired_x - self.get_wheel_distance()), time.time() - self.previous_time())#round((self.current_speed - self.desired_speed) / 2)
-            self.set_motor(1,self.power * (1 + self.steer))
-            self.set_motor(4,self.power * (1 - self.steer))
+        #if self.moving:
+        self.power += self.pid.calculate((self.desired_speed - self.current_speed), time.time() - self.previous_time())#round((self.current_speed - self.desired_speed) / 2)
+        self.set_motor(1,self.power * (1 + self.steer))
+        self.set_motor(4,self.power * (1 - self.steer))
 
         self.previous_x = self.get_wheel_distance()
         self.previous_time = time.time()
-        self.previous_speed = self.current_speed
         time.sleep(0.1)
 
     def move_distance(self, distance, speed):
@@ -91,24 +90,30 @@ class mcms(object):
             print('Error: Touch Sensor')
             # sets the power for the given motor
 
+    def get_nxt_light(self):
+        try:
+            return BP.get_sensor(BP.PORT_2)
+        except brickpi3.SensorError:
+            print('Error: Light Sensor')
+
     def get_wheel_distance(self):
-        return ((self.get_motor(1) + self.get_motor(4)) / 2) * (27 / 360)
+        return ((self.get_motor(1) + self.get_motor(4)) / 2) * (2 * pi * self.radius / 360)
 
     def set_motor(self, motor, amount):
-        self.power[motor] = amount
+        self.power_list[motor] = amount
 
-        if sum(self.power) > self.max_power:
-            power_wheels = (self.max_power - self.power[2] - self.power[3]) / (self.power[1] + self.power[4])
-            BP.set_motor_power(BP.PORT_A, power_wheels * self.power[1])
-            BP.set_motor_power(BP.PORT_B, self.power[2])
-            BP.set_motor_power(BP.PORT_C, self.power[3])
-            BP.set_motor_power(BP.PORT_D, power_wheels * self.power[4])
+        if abs(self.power_list[1]) + abs(self.power_list[2]) + abs(self.power_list[3]) + abs(self.power_list[4]) +  > self.max_power:
+            power_wheels = (self.max_power - self.power_list[2] - self.power_list[3]) / (self.power_list[1] + self.power_list[4])
+            BP.set_motor_power(BP.PORT_A, power_wheels * self.power_list[1])
+            BP.set_motor_power(BP.PORT_B, self.power_list[2])
+            BP.set_motor_power(BP.PORT_C, self.power_list[3])
+            BP.set_motor_power(BP.PORT_D, power_wheels * self.power_list[4])
 
         else:
-            BP.set_motor_power(BP.PORT_A, self.power[1])
-            BP.set_motor_power(BP.PORT_B, self.power[2])
-            BP.set_motor_power(BP.PORT_C, self.power[3])
-            BP.set_motor_power(BP.PORT_D, self.power[4])
+            BP.set_motor_power(BP.PORT_A, self.power_list[1])
+            BP.set_motor_power(BP.PORT_B, self.power_list[2])
+            BP.set_motor_power(BP.PORT_C, self.power_list[3])
+            BP.set_motor_power(BP.PORT_D, self.power_list[4])
 
     # returns the orientation of the motor
     def get_motor(self, motor):
@@ -145,8 +150,7 @@ class mcms(object):
     def set_speed(self, speed):
         self.desired_speed = speed
         self.moving = True
-        self.pid.reset(0)
-        self.desired_x = self.current_x
+        self.pid.reset(self.desired_speed - self.current_speed)
         self.update()
 
     def straight(self):
@@ -178,35 +182,56 @@ class mcms(object):
 
 snot = mcms()
 
-
-
 def test():
     while True:
-        go = input('todo')
-        if go == 'f':
+        go = int(input('todo: '))
+        if go == 1:
             snot.set_motor(1,20)
             snot.set_motor(4,20)
-        elif go == 's':
+        elif go == 2:
             snot.set_motor(1,0)
             snot.set_motor(4,0)
-        elif go == 'r':
+        elif go == 3:
             snot.set_motor(1, 30)
             snot.set_motor(4, 10)
-        elif go == 'l':
+        elif go == 4:
             snot.set_motor(1, 10)
             snot.set_motor(4, 30)
-        elif go == 'stop':
+        elif go == 0:
             snot.stop()
             break
+
+def yeet():
+    while True:
+        go = int(input('todo: '))
+        if go == 1:
+            snot.set_speed(10)
+        elif go == 2:
+            snot.set_speed(0)
+        elif go == 3:
+            snot.set_steer("right",0.2)
+        elif go == 4:
+            snot.set_steer("left", 0.2)
+        elif go == 5:
+            snot.straight()
+
+def line_follow():
+    snot.set_speed(5)
+    while not snot.get_touch():
+        snot.set_steer('right', (snot.get_nxt_light() - 2000)/1000)
 
 try:
     #todo: implement mcms push button controls
     #todo: implement line following control
     while True:
-        go = input('what would you like to do')
-        if go == 'test':
+        go = int(input('what would you like to do: '))
+        if go == 1:
             test()
-        elif go == 'stop':
+        elif go == 2:
+            yeet()
+        elif go == 3:
+            line_follow()
+        elif go == 0:
             break
 
 except KeyboardInterrupt:
