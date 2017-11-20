@@ -124,7 +124,7 @@ class mcms(object):
     def get_motor(self, motor):
         try:
             if motor == 1 or motor == 'a':
-                regit turn BP.get_motor_encoder(BP.PORT_A)
+                BP.get_motor_encoder(BP.PORT_A)
             elif motor == 2 or motor == 'b':
                 return BP.get_motor_encoder(BP.PORT_B)
             elif motor == 3 or motor == 'c':
