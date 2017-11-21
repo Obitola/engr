@@ -4,7 +4,7 @@ from __future__ import division  # ''
 import time  # import the time library for the sleep function
 import brickpi3  # import the BrickPi3 drivers
 #import grovepi
-from MasterFunct import *
+import MasterFunct as pmad
 import smbus
 from math import pi
 
@@ -137,9 +137,9 @@ class mcms(object):
             print(error)
 
     def data(self):
-        print("Sensor: %6d Motor A: %6d  B: %6d  C: %6d  D: %6d" \
-              % (grovepi.ultrasonicRead(ultrasonic_sensor_port), \
-                 BP.get_motor_encoder(BP.PORT_A), \
+        print("Speed: %6d Light: %6d  B: %6d  C: %6d  D: %6d" \
+              % (self.current_speed, \
+                 self.get_nxt_light(), \
                  BP.get_motor_encoder(BP.PORT_B), \
                  BP.get_motor_encoder(BP.PORT_C), \
                  BP.get_motor_encoder(BP.PORT_D)))
@@ -238,7 +238,12 @@ def line_follow():
         snot.update()
         #snot.set_steer('right', (snot.get_nxt_light() - 2080)/400)
 
-
+def energy():
+    pmad.startPowerTracking(45)
+    snot.set_speed(-12)
+    while pmad.getPowerStored() >= 100:
+        snot.update()
+    snot.stop()
 
 try:
     #todo: implement mcms push button controls
@@ -251,6 +256,8 @@ try:
             yeet()
         elif go == 3:
             line_follow()
+        elif go == 4:
+            energy()
         elif go == 0:
             break
 
