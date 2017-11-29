@@ -12,8 +12,11 @@ from math import pi
 BP = brickpi3.BrickPi3()  # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
 BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.TOUCH) # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
 BP.set_sensor_type(BP.PORT_2, BP.SENSOR_TYPE.NXT_LIGHT_ON)
+BP.set_sensor_type(BP.PORT_4, BP.SENSOR_TYPE.NXT_LIGHT_ON)
 
 ultrasonic_sensor_port = 4
+white = 2100
+black = 2700
 
 #A generic PID loop controller for control algorithms
 class PID(object):
@@ -21,8 +24,8 @@ class PID(object):
     # Return a instance of a un tuned PID controller
     def __init__(self, startingError):
         self._p = 0.5
-        self._i = 0.7
-        self._d = 0.7
+        self._i = 0.03
+        self._d = 0.2
         self._esum = 0  # Error sum for integral term
         self._le = startingError  # Last error value
 
@@ -42,43 +45,64 @@ class PID(object):
 class mcms(object):
 
     def __init__(self):
-        self.previous_x = self.get_wheel_distance()
+        self.previous_x_right = self.get_wheel_distance_right()
+        self.previous_x_left = self.get_wheel_distance_left()
         self.previous_time = time.time() - 0.1
-        self.current_speed = 0
+        self.current_speed = 0.0
+        self.current_speed_right = 0.0
+        self.current_speed_left = 0.0
         self.moving = False
-        self.desired_speed = 0
-        self.power = 0
+        self.desired_speed = 0.0
+        self.desired_speed_right = 0.0
+        self.desired_speed_left = 0.0
+        self.power_right = 0
+        self.power_left = 0
         self.steer = 0
-        self.pid = PID(0)
+        self.pid_right = PID(0)
+        self.pid_left = PID(0)
         self.power_list = [0,0,0,0,0]
-        self.max_power = 200
+        self.max_power = 70
         self.radius = 27
-        self.desired_speed = 0
+        self.desired_speed = 0.0
 
     def update(self):
-        self.current_speed = (self.get_wheel_distance() - self.previous_x) / (time.time() - self.previous_time)
-        error = self.desired_speed - self.current_speed
-        if error < 0:
-            self.pid.reset(error)
+        delta_time = time.time() - self.previous_time
+
+        self.desired_speed_right = self.desired_speed * (1 + self.steer)
+        self.desired_speed_left = self.desired_speed * (1 - self.steer)
+
+        self.current_speed_right = (self.get_wheel_distance_right() - self.previous_x_right) / (delta_time)
+        self.current_speed_left = (self.get_wheel_distance_left() - self.previous_x_left) / (delta_time)
+        self.current_speed = (self.current_speed_right + self.current_speed_left) / 2
+
+        error_right = self.desired_speed_right - self.current_speed_right
+        error_left = self.desired_speed_left - self.current_speed_left
 
         #if self.moving:
-        self.power += self.pid.calculate(error, time.time() - self.previous_time)#round((self.current_speed - self.desired_speed) / 2)
-        self.set_motor(1,self.power * (1 + self.steer))
-        self.set_motor(4,self.power * (1 - self.steer))
-        print(self.desired_speed - self.current_speed)
-        print(self.power_list)
+        self.power_right += self.pid_right.calculate(error_right, delta_time)
+        self.power_left += self.pid_left.calculate(error_left, delta_time)
 
-        self.previous_x = self.get_wheel_distance()
+        self.set_motor(1,self.power_right)
+        self.set_motor(4,self.power_left)
+
+        self.previous_x_right = self.get_wheel_distance_right()
+        self.previous_x_left = self.get_wheel_distance_left()
         self.previous_time = time.time()
-        time.sleep(0.1)
+
+        self.data()
+        time.sleep(0.2)
 
     def move_distance(self, distance, speed):
-        self.update()
+        self.set_speed(speed)
+        self.steer = 0
         start_time = time.time()
-        total_time = distance / speed
+        total_time = abs(distance / speed)
         while time.time() - start_time < total_time:
             self.update()
         self.stop()
+
+    def get_claw_position(self):
+        return self.get_motor(3)
 
     # gets the distance value of the sensor
     def get_ultrasonic_distance(self):
@@ -101,8 +125,17 @@ class mcms(object):
         except brickpi3.SensorError:
             print('Error: Light Sensor')
 
-    def get_wheel_distance(self):
-        return ((self.get_motor(1) + self.get_motor(4)) / 2) * (2 * pi * 3.5 / 360)
+    def get_hall_sensor(self):
+        try:
+            return BP.get_sensor(BP.PORT_4)
+        except brickpi3.SensorError:
+            print('Error: Hall Sensor')
+
+    def get_wheel_distance_right(self):
+        return self.get_motor(1) * (2 * pi * 3.5 / 360)
+
+    def get_wheel_distance_left(self):
+        return self.get_motor(4) * (2 * pi * 3.5 / 360)
 
     def set_motor(self, motor, amount):
         self.power_list[motor] = amount
@@ -124,7 +157,7 @@ class mcms(object):
     def get_motor(self, motor):
         try:
             if motor == 1 or motor == 'a':
-                BP.get_motor_encoder(BP.PORT_A)
+                return BP.get_motor_encoder(BP.PORT_A)
             elif motor == 2 or motor == 'b':
                 return BP.get_motor_encoder(BP.PORT_B)
             elif motor == 3 or motor == 'c':
@@ -137,12 +170,10 @@ class mcms(object):
             print(error)
 
     def data(self):
-        print("Speed: %6d Light: %6d  B: %6d  C: %6d  D: %6d" \
+        print("Speed: %6d Light: %6d  Hall: %6d" \
               % (self.current_speed, \
                  self.get_nxt_light(), \
-                 BP.get_motor_encoder(BP.PORT_B), \
-                 BP.get_motor_encoder(BP.PORT_C), \
-                 BP.get_motor_encoder(BP.PORT_D)))
+                 self.get_hall_sensor()))
 
     def shutdown(self):
         BP.offset_motor_encoder(BP.PORT_A, BP.get_motor_encoder(BP.PORT_A))
@@ -154,8 +185,9 @@ class mcms(object):
 
     def set_speed(self, speed):
         self.desired_speed = speed
+        self.desired_speed_right = self.desired_speed * (1 + self.steer)
+        self.desired_speed_left = self.desired_speed * (1 - self.steer)
         self.moving = True
-        self.pid.reset(self.desired_speed - self.current_speed)
         self.update()
 
     def straight(self):
@@ -166,10 +198,10 @@ class mcms(object):
             self.steer = amount
         elif direction == 'left':
             self.steer = -amount
-        if self.steer > 1:
-            self.steer = 1
-        elif self.steer < -1:
-            self.steer = -1
+        if self.steer > 1.5:
+            self.steer = 1.5
+        elif self.steer < -1.5:
+            self.steer = -1.5
 
     def turn_left(self):
         self.set_steer('left',1)
@@ -178,14 +210,25 @@ class mcms(object):
         self.set_steer('right', 1)
 
     def stop(self):
-        self.moving = False
+        self.desired_speed = 0
         self.set_motor(1, 0)
         self.set_motor(4, 0)
-
-
-
         self.set_motor(2, 0)
         self.set_motor(3, 0)
+
+    def open_claw(self):
+        for x in range(16):
+            snot.set_motor(3, 20)
+            time.sleep(0.3)
+            snot.set_motor(3, 0)
+            time.sleep(0.1)
+
+    def close_claw(self):
+        for x in range(16):
+            snot.set_motor(3, -20)
+            time.sleep(0.3)
+            snot.set_motor(3, 0)
+            time.sleep(0.1)
 
 snot = mcms()
 
@@ -232,11 +275,12 @@ def yeet():
         
 
 def line_follow():
-    snot.set_speed(-7)
+    snot.set_speed(-4)
+    snot.update()
     while not snot.get_touch():
-        print(snot.get_nxt_light())
+        snot.data()
+        snot.set_steer('right', (snot.get_nxt_light() - ((white + black) / 2))/400)
         snot.update()
-        #snot.set_steer('right', (snot.get_nxt_light() - 2080)/400)
 
 def energy():
     pmad.startPowerTracking(45)
@@ -245,11 +289,20 @@ def energy():
         snot.update()
     snot.stop()
 
+def data():
+    while True:
+        snot.data()
+        time.sleep(0.3)
+
 try:
     #todo: implement mcms push button controls
     #todo: implement line following control
+    go = 9
     while True:
-        go = int(input('what would you like to do: '))
+        try:
+            go = int(input('what would you like to do: '))
+        except:
+            print('Please input an integer')
         if go == 1:
             test()
         elif go == 2:
@@ -258,6 +311,8 @@ try:
             line_follow()
         elif go == 4:
             energy()
+        elif go == 5:
+            data()
         elif go == 0:
             break
 
