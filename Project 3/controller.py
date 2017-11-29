@@ -15,17 +15,17 @@ BP.set_sensor_type(BP.PORT_2, BP.SENSOR_TYPE.NXT_LIGHT_ON)
 BP.set_sensor_type(BP.PORT_4, BP.SENSOR_TYPE.NXT_LIGHT_ON)
 
 ultrasonic_sensor_port = 4
-white = 2100
-black = 2700
+white = 2200
+black = 2800
 
 #A generic PID loop controller for control algorithms
 class PID(object):
 
     # Return a instance of a un tuned PID controller
     def __init__(self, startingError):
-        self._p = 0.5
-        self._i = 0.03
-        self._d = 0.2
+        self._p = 0.9
+        self._i = 0.05
+        self._d = 0.5
         self._esum = 0  # Error sum for integral term
         self._le = startingError  # Last error value
 
@@ -61,9 +61,11 @@ class mcms(object):
         self.pid_right = PID(0)
         self.pid_left = PID(0)
         self.power_list = [0,0,0,0,0]
-        self.max_power = 70
+        self.max_power = 200
         self.radius = 27
         self.desired_speed = 0.0
+        self.error_right = 0.0
+        self.error_left = 0.0
 
     def update(self):
         delta_time = time.time() - self.previous_time
@@ -75,12 +77,12 @@ class mcms(object):
         self.current_speed_left = (self.get_wheel_distance_left() - self.previous_x_left) / (delta_time)
         self.current_speed = (self.current_speed_right + self.current_speed_left) / 2
 
-        error_right = self.desired_speed_right - self.current_speed_right
-        error_left = self.desired_speed_left - self.current_speed_left
+        self.error_right = self.desired_speed_right - self.current_speed_right
+        self.error_left = self.desired_speed_left - self.current_speed_left
 
         #if self.moving:
-        self.power_right += self.pid_right.calculate(error_right, delta_time)
-        self.power_left += self.pid_left.calculate(error_left, delta_time)
+        self.power_right += self.pid_right.calculate(self.error_right, delta_time)
+        self.power_left += self.pid_left.calculate(self.error_left, delta_time)
 
         self.set_motor(1,self.power_right)
         self.set_motor(4,self.power_left)
@@ -170,10 +172,12 @@ class mcms(object):
             print(error)
 
     def data(self):
-        print("Speed: %6d Light: %6d  Hall: %6d" \
+        print("Speed: %6d Light: %6d  Hall: %6d  Steer: %6d  Error Left: %6d  " \
               % (self.current_speed, \
                  self.get_nxt_light(), \
-                 self.get_hall_sensor()))
+                 self.get_hall_sensor(), \
+                 self.steer, \
+                 self.error_left))
 
     def shutdown(self):
         BP.offset_motor_encoder(BP.PORT_A, BP.get_motor_encoder(BP.PORT_A))
@@ -275,11 +279,11 @@ def yeet():
         
 
 def line_follow():
-    snot.set_speed(-4)
+    snot.set_speed(-3)
     snot.update()
     while not snot.get_touch():
         snot.data()
-        snot.set_steer('right', (snot.get_nxt_light() - ((white + black) / 2))/400)
+        snot.set_steer('right', (snot.get_nxt_light() - ((white + black - 400) / 2))/225)
         snot.update()
 
 def energy():
