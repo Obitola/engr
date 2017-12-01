@@ -14,7 +14,7 @@ BP.set_sensor_type(BP.PORT_2, BP.SENSOR_TYPE.NXT_LIGHT_ON)
 BP.set_sensor_type(BP.PORT_4, BP.SENSOR_TYPE.NXT_LIGHT_ON)
 
 ultrasonic_sensor_port = 4
-white = 2200
+white = 2500
 black = 2800
 radius = 4
 
@@ -103,6 +103,12 @@ class mcms(object):
         except:
             print('Error: DPS Motor Error')
 
+    def set_motor(self, motor, power):
+        try:
+            BP.set_motor_power(BP.PORT_C, power)
+        except:
+            print('error')
+    
     # returns the orientation of the motor
     def get_motor(self, motor):
         try:
@@ -163,15 +169,16 @@ class mcms(object):
         self.set_motor(3, 0)
 
     def open_claw(self):
-        for x in range(16):
-            snot.set_motor(3, 20)
-            time.sleep(0.3)
+        count = 1
+        for x in range(36):
+            snot.set_motor(3, 16)
+            time.sleep(0.2)
             snot.set_motor(3, 0)
             time.sleep(0.1)
 
     def close_claw(self):
-        for x in range(16):
-            snot.set_motor(3, -20)
+        for x in range(45):
+            snot.set_motor(3, -25)
             time.sleep(0.3)
             snot.set_motor(3, 0)
             time.sleep(0.1)
@@ -180,17 +187,23 @@ class mcms(object):
 snot = mcms()
 
 
-
-
-
 def line_follow():
-    snot.set_speed(-5)
+    snot.set_speed(-3)
     snot.update()
     while not snot.get_touch():
-        snot.set_steer('right', (snot.get_nxt_light() - ((white + black - 400) / 2)) / 225)
+        snot.set_steer('left', (snot.get_nxt_light() - ((white + black - 250) / 2)) / 150)
         snot.data()
         snot.update()
 
+def straight():
+    while not snot.get_touch():
+        snot.data()
+    snot.set_speed(-3)
+    snot.update()
+    while not snot.get_touch():
+        #snot.set_steer('left', (snot.get_nxt_light() - ((white + black - 250) / 2)) / 150)
+        snot.data()
+        snot.update()
 
 def energy():
     pmad.startPowerTracking(45)
@@ -205,6 +218,18 @@ def data():
         snot.data()
         time.sleep(0.3)
 
+def legit():
+    at_beacon = False
+    while not snot.get_touch():
+        snot.data()
+    snot.set_speed(-5)
+    snot.update()
+    while not at_beacon:
+        snot.set_steer('right', -2 +(snot.get_nxt_light() - ((white + black + 1000) / 2)) / 225)
+        snot.data()
+        snot.update()
+
+
 
 try:
     # todo: implement mcms push button controls
@@ -215,12 +240,20 @@ try:
             go = int(input('what would you like to do: '))
         except:
             print('Please input an integer')
-        if go == 3:
+        if go == 1:
+            legit()
+        elif go == 2:
+            snot.close_claw()
+        elif go == 6:
+            snot.open_claw()
+        elif go == 3:
             line_follow()
         elif go == 4:
             energy()
         elif go == 5:
             data()
+        elif go == 7:
+            straight()
         elif go == 0:
             break
 
