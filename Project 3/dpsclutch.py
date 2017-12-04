@@ -15,39 +15,44 @@ BP.set_sensor_type(BP.PORT_3, BP.SENSOR_TYPE.TOUCH)
 BP.set_sensor_type(BP.PORT_4, BP.SENSOR_TYPE.NXT_LIGHT_ON)
 
 ultrasonic_sensor_port = 4
-white = 2500
-black = 2790
+white = 2460
+black = 2710
 radius = 4
-speed = -7
+speed = -3
 hall_normal = 2065
-hall_error = 70
-black_resistance = 0.5
+hall_error = 30
+black_resistance = 0.3
 sensitivity = 3.5
 buffer = 0.005
-#pmad.startPowerTracking(45)
-
+min_energy = 120
+try:
+    pmad.startPowerTracking(45)
+except:
+    print('PMAD not connected')
+# Same pid currently being implemented in Purdue's IEEE ROV team
 # A generic PID loop controller for control algorithms
 class PID(object):
     # Return a instance of a un tuned PID controller
-    def __init__(self, startingError):
+    def __init__(self):
         self._p = 1.0
         self._i = 0
         self._d = 0
         self._esum = 0  # Error sum for integral term
-        self._le = startingError  # Last error value
+        #self._le = startingError  # Last error value
 
     # Calculates the output of the PID controller
-    def calculate(self, error, dt):
-        self._esum += error * dt
-        dError = (error - self._le) / dt
-        u = self._p * error + self._i * self._esum + self._d * dError
-        self._le = error
+    def calculate(self, error):
+        #self._esum += error * dt
+        #dError = (error - self._le) / dt
+        u = self._p * error # + self._i * self._esum + self._d * dError
+        #self._le = error
         return u
 
     # Resets the integral sum and the last error value
-    def reset(self, startingError):
-        self._esum = 0
-        self._le = startingError
+    def reset(self):
+        pass
+        #self._esum = 0
+        #self._le = startingError
 
 class mcms(object):
     def __init__(self):
@@ -172,7 +177,8 @@ class mcms(object):
 
     def stop(self):
         self.desired_speed = 0
-        snot.set_speed(0)
+        self.set_speed(0)
+        self.update()
         self.set_motor(1, 0)
         self.set_motor(4, 0)
         self.set_motor(2, 0)
@@ -208,7 +214,14 @@ def wait_for_touch():
             time.sleep(1)
     return count
 
-def calculate_steer(dt):
+def wait_for_energy():
+    try:
+        while pmad.getPowerStored() < min_energy:
+            time.sleep(0.1)
+    except:
+        print('Error')
+
+def calculate_steer():
     sum = black + white
     difference = black - white
     value = ((snot.get_nxt_light() - (sum - (difference * black_resistance))/2)  / ((difference) /  sensitivity))
@@ -216,32 +229,24 @@ def calculate_steer(dt):
     snot.update()
 
 def line_follow(distance):
-    previous_time = time.time()
     length = abs(distance / speed)
     start_time = time.time()
     snot.set_speed(speed)
     snot.update()
     while time.time() - start_time < length:
-        dt = time.time() - previous_time
-        calculate_steer(dt)
-        previous_time = time.time()
+        calculate_steer()
         time.sleep(buffer)
     snot.stop()
 
 def navigate_to_hall():
-    previous_time = time.time()
     snot.set_speed(speed)
     snot.update()
     while check_hall():
-        dt = time.time() - previous_time
-        calculate_steer(dt)
-        previous_time = time.time()
+        calculate_steer()
         time.sleep(buffer)
     snot.stop()
 
 def move(steer, distance):
-    #pmad.startPowerTracking(45)
-    #start = pmad.getPowerStored()
     length = abs(distance / speed)
     start_time = time.time()
     snot.set_speed(speed)
@@ -249,19 +254,18 @@ def move(steer, distance):
     snot.update()
     while time.time() - start_time < length:
         time.sleep(buffer)
-        #snot.data()
-        #print("Produced: ", pmad.getPowerProduced(),"\tConsumed: ", pmad.getPowerConsumed(),"\tStored: ", pmad.getPowerStored())
-    snot.set_speed(0)
-    #print(start - pmad.getPowerStored())
+    snot.stop()
 
 def energy():
     #pmad.startPowerTracking(45)
+    start_energy = pmad.getPowerStored()
     total_power = 0
     snot.set_speed(0)
     while pmad.getPowerStored() >= 50:
         snot.update()
         #print("Produced: ", pmad.getPowerProduced(),"\tConsumed: ", pmad.getPowerConsumed(),"\tStored: ", pmad.getPowerStored())
     snot.stop()
+    print(start_energy - pmad.getPowerStored())
 
 def data():
     while True:
@@ -286,6 +290,9 @@ def legit():
 
     print('waiting till cargo is held')
     wait_for_touch()
+    snot.close_claw()
+
+    wait_for_touch()
 
     print('traveling with cargo')
     navigate_to_hall()
@@ -296,32 +303,32 @@ def legit():
         navigate_to_hall()
         print('reached drop-off site A')
     elif location == 'B':
-        line_follow(7)
+        line_follow(20)
         navigate_to_hall()
         print('reached beacon B')
-        #todo: calibrate how to get past black line
         move(0.4, 7)
+        line_follow(15)
         navigate_to_hall()
         print('reached drop-off site B')
 
     elif location == 'C':
-        line_follow(7)
+        line_follow(20)
         navigate_to_hall()
         print('reached beacon B')
-        line_follow(7)
+        line_follow(20)
         navigate_to_hall()
         print('reached beacon C')
-        #todo: calibrate how to get past black line
         move(0.4, 7)
+        line_follow(15)
         navigate_to_hall()
         print('reached drop-off site C')
 
     print('reached drop-off location')
     move(-0.31, 28)
     drop_off()
+    move(0.2, 4)
 
     print('navigate back to line')
-
     print('returning to pickup location')
     navigate_to_hall()
 
