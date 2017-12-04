@@ -3,7 +3,7 @@ from __future__ import division  # ''
 
 import time  # import the time library for the sleep function
 import brickpi3  # import the BrickPi3 drivers
-# import grovepi
+#import grovepi
 import MasterFunct as pmad
 import smbus
 from math import pi
@@ -11,21 +11,28 @@ from math import pi
 BP = brickpi3.BrickPi3()  # Create an instance of the BrickPi3 class. BP will be the BrickPi3 object.
 BP.set_sensor_type(BP.PORT_1, BP.SENSOR_TYPE.TOUCH)  # Configure for a touch sensor. If an EV3 touch sensor is connected, it will be configured for EV3 touch, otherwise it'll configured for NXT touch.
 BP.set_sensor_type(BP.PORT_2, BP.SENSOR_TYPE.NXT_LIGHT_ON)
+BP.set_sensor_type(BP.PORT_3, BP.SENSOR_TYPE.TOUCH)
 BP.set_sensor_type(BP.PORT_4, BP.SENSOR_TYPE.NXT_LIGHT_ON)
 
 ultrasonic_sensor_port = 4
 white = 2500
-black = 2800
+black = 2790
 radius = 4
-
+speed = -7
+hall_normal = 2065
+hall_error = 70
+black_resistance = 0.5
+sensitivity = 3.5
+buffer = 0.005
+#pmad.startPowerTracking(45)
 
 # A generic PID loop controller for control algorithms
 class PID(object):
     # Return a instance of a un tuned PID controller
     def __init__(self, startingError):
-        self._p = 0.9
-        self._i = 0.05
-        self._d = 0.5
+        self._p = 1.0
+        self._i = 0
+        self._d = 0
         self._esum = 0  # Error sum for integral term
         self._le = startingError  # Last error value
 
@@ -41,7 +48,6 @@ class PID(object):
     def reset(self, startingError):
         self._esum = 0
         self._le = startingError
-
 
 class mcms(object):
     def __init__(self):
@@ -71,9 +77,12 @@ class mcms(object):
             print('Error: Distance Sensor')
 
     # checks if button is pressed
-    def get_touch(self):
+    def get_touch(self, sensor):
         try:
-            return BP.get_sensor(BP.PORT_1)
+            if sensor == 1:
+                return BP.get_sensor(BP.PORT_1)
+            elif sensor == 3:
+                return BP.get_sensor(BP.PORT_3)
         except brickpi3.SensorError:
             print('Error: Touch Sensor')
             # sets the power for the given motor
@@ -126,7 +135,7 @@ class mcms(object):
             print(error)
 
     def data(self):
-        print("Speed: %3d Light: %6d  Hall: %6d  Steer: %3d " \
+        print("Speed: %3f Light: %6d  Hall: %6d  Steer: %3f " \
               % (self.speed, \
                  self.get_nxt_light(), \
                  self.get_hall_sensor(), \
@@ -141,12 +150,12 @@ class mcms(object):
         BP.reset_all()
 
     def set_speed(self, speed):
-        self.speed = speed
+        self.speed = speed #* ((4 - abs(self.steer)) / 4) 
         dps = speed * 360 / (2 * pi * radius)
         dps_right = dps * (1 + self.steer)
         dps_left = dps * (1 - self.steer)
-        self.set_dps(1, dps_right)
-        self.set_dps(4, dps_left)
+        self.set_dps(4, dps_right)
+        self.set_dps(1, dps_left)
 
     def straight(self):
         self.steer = 0
@@ -163,77 +172,167 @@ class mcms(object):
 
     def stop(self):
         self.desired_speed = 0
+        snot.set_speed(0)
         self.set_motor(1, 0)
         self.set_motor(4, 0)
         self.set_motor(2, 0)
         self.set_motor(3, 0)
 
     def open_claw(self):
-        count = 1
-        for x in range(36):
-            snot.set_motor(3, 16)
+        start = pmad.getPowerStored()
+        for x in range(30):
+            snot.set_motor(3, 13)
             time.sleep(0.2)
             snot.set_motor(3, 0)
             time.sleep(0.1)
+        print('Energy Used to Open Claw', start - pmad.getPowerStored())
 
     def close_claw(self):
-        for x in range(45):
-            snot.set_motor(3, -25)
+        start = pmad.getPowerStored()
+        for x in range(22):
+            snot.set_motor(3, -20)
             time.sleep(0.3)
             snot.set_motor(3, 0)
             time.sleep(0.1)
-
+        print('Energy Used to Close Claw', start - pmad.getPowerStored())
 
 snot = mcms()
 
+def wait_for_touch():
+    count = 0
+    while not snot.get_touch(1):
+        if snot.get_touch(3):
+            print('hehe')
+            count += 1
+            move(0,1)
+            time.sleep(1)
+    return count
 
-def line_follow():
-    snot.set_speed(-3)
+def calculate_steer(dt):
+    sum = black + white
+    difference = black - white
+    value = ((snot.get_nxt_light() - (sum - (difference * black_resistance))/2)  / ((difference) /  sensitivity))
+    snot.set_steer('left',value)
     snot.update()
-    while not snot.get_touch():
-        snot.set_steer('left', (snot.get_nxt_light() - ((white + black - 250) / 2)) / 150)
-        snot.data()
-        snot.update()
 
-def straight():
-    while not snot.get_touch():
-        snot.data()
-    snot.set_speed(-3)
+def line_follow(distance):
+    previous_time = time.time()
+    length = abs(distance / speed)
+    start_time = time.time()
+    snot.set_speed(speed)
     snot.update()
-    while not snot.get_touch():
-        #snot.set_steer('left', (snot.get_nxt_light() - ((white + black - 250) / 2)) / 150)
-        snot.data()
-        snot.update()
-
-def energy():
-    pmad.startPowerTracking(45)
-    snot.set_speed(-12)
-    while pmad.getPowerStored() >= 100:
-        snot.update()
+    while time.time() - start_time < length:
+        dt = time.time() - previous_time
+        calculate_steer(dt)
+        previous_time = time.time()
+        time.sleep(buffer)
     snot.stop()
 
+def navigate_to_hall():
+    previous_time = time.time()
+    snot.set_speed(speed)
+    snot.update()
+    while check_hall():
+        dt = time.time() - previous_time
+        calculate_steer(dt)
+        previous_time = time.time()
+        time.sleep(buffer)
+    snot.stop()
+
+def move(steer, distance):
+    #pmad.startPowerTracking(45)
+    #start = pmad.getPowerStored()
+    length = abs(distance / speed)
+    start_time = time.time()
+    snot.set_speed(speed)
+    snot.set_steer('right', steer)
+    snot.update()
+    while time.time() - start_time < length:
+        time.sleep(buffer)
+        #snot.data()
+        #print("Produced: ", pmad.getPowerProduced(),"\tConsumed: ", pmad.getPowerConsumed(),"\tStored: ", pmad.getPowerStored())
+    snot.set_speed(0)
+    #print(start - pmad.getPowerStored())
+
+def energy():
+    #pmad.startPowerTracking(45)
+    total_power = 0
+    snot.set_speed(0)
+    while pmad.getPowerStored() >= 50:
+        snot.update()
+        #print("Produced: ", pmad.getPowerProduced(),"\tConsumed: ", pmad.getPowerConsumed(),"\tStored: ", pmad.getPowerStored())
+    snot.stop()
 
 def data():
     while True:
         snot.data()
-        time.sleep(0.3)
+        time.sleep(0.5)
+
+def drop_off():
+    snot.open_claw()
 
 def legit():
-    at_beacon = False
-    while not snot.get_touch():
-        snot.data()
-    snot.set_speed(-5)
-    snot.update()
-    while not at_beacon:
-        snot.set_steer('right', -2 +(snot.get_nxt_light() - ((white + black + 1000) / 2)) / 225)
-        snot.data()
-        snot.update()
+    #pmad.startPowerTracking(45)
+    location = 'null'
+    while location == 'null':
+        print('select location')
+        input = wait_for_touch()
+        if input == 1:
+            location = 'A'
+        elif input == 2:
+            location = 'B'
+        elif input == 3:
+            location = 'C'
 
+    print('waiting till cargo is held')
+    wait_for_touch()
 
+    print('traveling with cargo')
+    navigate_to_hall()
+
+    print('reached beacon A')
+    if location == 'A':
+        move(0.1, 5)
+        navigate_to_hall()
+        print('reached drop-off site A')
+    elif location == 'B':
+        line_follow(7)
+        navigate_to_hall()
+        print('reached beacon B')
+        #todo: calibrate how to get past black line
+        move(0.4, 7)
+        navigate_to_hall()
+        print('reached drop-off site B')
+
+    elif location == 'C':
+        line_follow(7)
+        navigate_to_hall()
+        print('reached beacon B')
+        line_follow(7)
+        navigate_to_hall()
+        print('reached beacon C')
+        #todo: calibrate how to get past black line
+        move(0.4, 7)
+        navigate_to_hall()
+        print('reached drop-off site C')
+
+    print('reached drop-off location')
+    move(-0.31, 28)
+    drop_off()
+
+    print('navigate back to line')
+
+    print('returning to pickup location')
+    navigate_to_hall()
+
+def check_hall():
+    average = 0
+    for x in range(10):
+        average += snot.get_hall_sensor()
+    average = average / 10
+    return average < hall_normal + hall_error and average > hall_normal - hall_error
 
 try:
-    # todo: implement mcms push button controls
-    # todo: implement line following control
     go = 9
     while True:
         try:
@@ -244,16 +343,16 @@ try:
             legit()
         elif go == 2:
             snot.close_claw()
-        elif go == 6:
-            snot.open_claw()
         elif go == 3:
-            line_follow()
+            snot.open_claw()
         elif go == 4:
-            energy()
+            move(0,30)
         elif go == 5:
             data()
+        elif go == 6:
+            energy()
         elif go == 7:
-            straight()
+            line_follow(80)
         elif go == 0:
             break
 

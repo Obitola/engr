@@ -1,7 +1,26 @@
+% Homework 12
+% File: HW12_Problem8_olao.m
+% Date: 1 December 2017
+% By: Oluwatobi Ola
+% olao
+% Section: 3
+% Team: 45
+%
+% ELECTRONIC SIGNATURE
+% Oluwatobi Ola
+%
+% The electronic signature above indicates that the program
+% submitted for evaluation is my individual work. I have
+% a general understanding of all aspects of its development
+% and execution.
+%
+% Prints a DO in Wabash chart
+
+
 clear;
 clc;
 
-disp('DO in Wabash in ml/L');
+disp('DO in Wabash in mg/L');
 disp('Day    DO');
 disp('-----------');
 
