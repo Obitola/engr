@@ -291,6 +291,7 @@ def energy():
     length = 10
     start_time = time.time()
     snot.set_speed(0)
+    snot.calculate_steer()
     snot.update()
     while time.time() - start_time < length:
         time.sleep(buffer)
