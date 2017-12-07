@@ -47,7 +47,7 @@ ultrasonic_sensor_port = 4
 white = 2460
 black = 2710
 radius = 4
-speed = -3
+speed = -5
 hall_normal = 2065
 hall_error = 30
 black_resistance = 0.3
@@ -286,7 +286,18 @@ def move(steer, distance):
     snot.stop()
 
 def energy():
-    #pmad.startPowerTracking(45)
+    pmad.startPowerTracking(45)
+    start_energy = pmad.getPowerStored()
+    length = 10
+    start_time = time.time()
+    snot.set_speed(0)
+    snot.update()
+    while time.time() - start_time < length:
+        time.sleep(buffer)
+    snot.stop()
+    print("Energy Used: ", start_energy - pmad.getPowerStored())
+    
+    
     start_energy = pmad.getPowerStored()
     total_power = 0
     snot.set_speed(0)
@@ -328,7 +339,7 @@ def legit():
 
     print('reached beacon A')
     if location == 'A':
-        move(0.1, 5)
+        move(0.2, 15)
         navigate_to_hall()
         print('reached drop-off site A')
     elif location == 'B':
