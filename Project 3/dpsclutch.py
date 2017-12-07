@@ -1,3 +1,32 @@
+# Project 3
+# File: Proj2_SolarHydro_Team45.py
+# Date: 8 December 2017
+# By: Oluwatobi Ola
+# olao
+# Evelyn Nonamaker
+# enonamak
+# Haydn Schroader
+# hschroad
+# Paul Thomas
+# thoma695
+# Section: 3
+# Team: 45
+#
+# ELECTRONIC SIGNATURE
+# Oluwatobi Ola
+# Evelyn Nonamaker
+# Haydn Schroader
+# Paul Thomas
+#
+# The electronic signatures above indicate that the program
+# submitted for evaluation is the combined effort of all
+# team members and that each member of the team was an
+# equal participant in its creation. In addition, each
+# member of the team has a general understanding of
+# all aspects of the program development and execution.
+#
+# It makes our robot move, follow lines, drop cargo and find magnets
+
 from __future__ import print_function  # use python 3 syntax but make it compatible with python 2
 from __future__ import division  # ''
 
