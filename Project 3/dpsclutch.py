@@ -1,5 +1,5 @@
 # Project 3
-# File: Proj2_SolarHydro_Team45.py
+# File: dpsclutch_Team45.py
 # Date: 8 December 2017
 # By: Oluwatobi Ola
 # olao
